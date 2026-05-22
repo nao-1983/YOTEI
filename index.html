@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>現場予定表</title>
+<style>
+  :root {
+    --bg: #f5f5f0;
+    --panel: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #555;
+    --line: #d8d6cf;
+    --line-strong: #a8a59a;
+    --accent: #c8482b;
+    --accent-soft: #f4dccf;
+    --rest: #888;
+    --rest-bg: #ececec;
+    --gencho: #1f7a4d;
+    --gencho-bg: #d9ecdf;
+    --sun: #c8482b;
+    --sat: #2b6cb8;
+    --selected: #fff3cd;
+    --selected-border: #e6a700;
+    --today: #fff8dc;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ ProN", "Yu Gothic", "游ゴシック", sans-serif;
+    background: var(--bg); color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  body { min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ===== ヘッダー ===== */
+  header {
+    background: var(--ink); color: #fff;
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.04em;
+  }
+  .month-nav {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 4px;
+  }
+  .month-nav button {
+    background: transparent; color: #fff; border: 0;
+    width: 36px; height: 36px; font-size: 18px;
+    border-radius: 6px; cursor: pointer;
+  }
+  .month-nav button:active { background: rgba(255,255,255,0.2); }
+  .month-label {
+    min-width: 110px; text-align: center;
+    font-size: 15px; font-weight: 700;
+  }
+  .view-tabs {
+    display: flex; gap: 0; margin-left: auto;
+    background: rgba(255,255,255,0.08); border-radius: 8px; padding: 3px;
+  }
+  .view-tabs button {
+    background: transparent; color: #fff; border: 0;
+    padding: 8px 14px; font-size: 13px; font-weight: 600;
+    border-radius: 6px; cursor: pointer;
+  }
+  .view-tabs button.active { background: var(--accent); }
+  .menu-btn {
+    background: rgba(255,255,255,0.08); color: #fff; border: 0;
+    width: 38px; height: 38px; border-radius: 8px; font-size: 18px; cursor: pointer;
+  }
+  .sync-indicator {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; font-size: 14px;
+    background: rgba(255,255,255,0.08); border-radius: 50%;
+    transition: background 0.3s;
+  }
+  .sync-indicator.synced { background: rgba(40,180,90,0.35); }
+  .sync-indicator.syncing { background: rgba(230,180,30,0.35); }
+  .sync-indicator.error { background: rgba(220,60,60,0.45); }
+
+  /* ===== 入力モードバー ===== */
+  .input-bar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 8px 12px;
+    display: flex; align-items: center; gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .input-bar .label {
+    font-size: 12px; color: var(--ink-soft); font-weight: 600;
+    white-space: nowrap;
+  }
+  .site-chip {
+    flex-shrink: 0;
+    padding: 8px 14px; border-radius: 999px;
+    border: 1.5px solid var(--line);
+    background: #fff; color: var(--ink);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    transition: all 0.12s;
+  }
+  .site-chip:active { transform: scale(0.96); }
+  .site-chip.selected {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+    box-shadow: 0 2px 6px rgba(200,72,43,0.4);
+  }
+  .site-chip.rest.selected { background: var(--rest); border-color: var(--rest); }
+  .site-chip.gencho.selected { background: var(--gencho); border-color: var(--gencho); }
+  .site-chip.eraser.selected { background: #444; border-color: #444; }
+
+  .action-row {
+    background: var(--accent-soft);
+    border-bottom: 1px solid var(--line);
+    padding: 8px 12px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px;
+    display: none;
+  }
+  .action-row.visible { display: flex; }
+  .action-row .count { font-weight: 700; color: var(--accent); }
+  .action-row button {
+    margin-left: auto;
+    padding: 8px 16px; border-radius: 6px;
+    border: 0; background: var(--accent); color: #fff;
+    font-weight: 700; font-size: 13px; cursor: pointer;
+  }
+  .action-row .clear-sel {
+    margin-left: 0;
+    background: transparent; color: var(--ink-soft);
+    border: 1px solid var(--line-strong);
+  }
+
+  /* ===== メイン領域 ===== */
+  main { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ===== マトリクス表示 ===== */
+  .matrix-wrap {
+    background: var(--panel);
+    overflow: auto;
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+  table.matrix {
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  table.matrix th, table.matrix td {
+    border: 1px solid var(--line);
+    padding: 0; margin: 0;
+    text-align: center;
+    background: #fff;
+  }
+  table.matrix thead th {
+    position: sticky; top: 0; z-index: 3;
+    background: #faf9f4;
+    height: 38px;
+    min-width: 38px;
+    font-size: 11px; font-weight: 600;
+    color: var(--ink-soft);
+  }
+  table.matrix thead th.day-sun { color: var(--sun); background: #fdf2ee; }
+  table.matrix thead th.day-sat { color: var(--sat); background: #eef4fb; }
+  table.matrix thead th.col-name {
+    position: sticky; left: 0; z-index: 4;
+    min-width: 96px; background: #faf9f4;
+    text-align: left; padding-left: 8px;
+  }
+  table.matrix thead th.col-total {
+    background: #faf9f4; min-width: 44px;
+  }
+  table.matrix tbody th.row-name {
+    position: sticky; left: 0; z-index: 2;
+    background: #faf9f4;
+    text-align: left; padding-left: 8px;
+    font-size: 12px; font-weight: 600;
+    min-width: 96px; height: 44px;
+    white-space: nowrap;
+  }
+  table.matrix tbody td.cell {
+    height: 44px; min-width: 38px;
+    font-size: 10px; line-height: 1.1;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    word-break: break-all;
+    padding: 2px 1px;
+  }
+  table.matrix tbody td.cell .cell-main {
+    font-size: 10px; line-height: 1.1;
+    font-weight: 600;
+  }
+  table.matrix tbody td.cell .cell-sub {
+    font-size: 9px; line-height: 1.1;
+    opacity: 0.75;
+    margin-top: 1px;
+    font-weight: 500;
+  }
+  table.matrix tbody td.cell.day-sun { background: #fdf2ee; }
+  table.matrix tbody td.cell.day-sat { background: #eef4fb; }
+  table.matrix tbody td.cell.has-value {
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  table.matrix tbody td.cell.is-rest {
+    background: var(--rest-bg);
+    color: var(--rest);
+  }
+  table.matrix tbody td.cell.is-gencho {
+    background: var(--gencho-bg);
+    color: var(--gencho);
+    font-weight: 700;
+  }
+  table.matrix tbody td.cell.selected {
+    outline: 3px solid var(--selected-border);
+    outline-offset: -3px;
+    background: var(--selected);
+  }
+  table.matrix tbody td.total {
+    background: #faf9f4;
+    font-weight: 700; font-size: 13px;
+    min-width: 44px;
+  }
+
+  /* ===== 個人カレンダー表示 ===== */
+  .person-view { padding: 12px; }
+  .person-selector {
+    display: flex; gap: 8px; overflow-x: auto;
+    margin-bottom: 12px; padding-bottom: 4px;
+  }
+  .person-selector button {
+    flex-shrink: 0;
+    padding: 8px 14px; border-radius: 999px;
+    border: 1.5px solid var(--line);
+    background: #fff; font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  .person-selector button.active {
+    background: var(--ink); color: #fff; border-color: var(--ink);
+  }
+  .calendar-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px; background: var(--panel);
+    padding: 10px; border-radius: 10px;
+  }
+  .calendar-grid .dow {
+    text-align: center; font-size: 11px; font-weight: 700;
+    color: var(--ink-soft); padding: 4px 0;
+  }
+  .calendar-grid .dow.sun { color: var(--sun); }
+  .calendar-grid .dow.sat { color: var(--sat); }
+  .calendar-grid .day-cell {
+    aspect-ratio: 1 / 1.1;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 4px; font-size: 11px;
+    display: flex; flex-direction: column;
+    cursor: pointer; background: #fff;
+    overflow: hidden;
+  }
+  .calendar-grid .day-cell.empty { border: 0; background: transparent; cursor: default; }
+  .calendar-grid .day-cell.has-value { background: var(--accent-soft); }
+  .calendar-grid .day-cell.is-rest { background: var(--rest-bg); color: var(--rest); }
+  .calendar-grid .day-cell.is-gencho { background: var(--gencho-bg); color: var(--gencho); font-weight: 700; }
+  .calendar-grid .day-cell.selected {
+    outline: 3px solid var(--selected-border); outline-offset: -3px;
+  }
+  .calendar-grid .day-num { font-weight: 700; font-size: 13px; }
+  .calendar-grid .day-num.sun { color: var(--sun); }
+  .calendar-grid .day-num.sat { color: var(--sat); }
+  .calendar-grid .site-name {
+    font-size: 10px; font-weight: 600;
+    margin-top: auto; line-height: 1.15;
+    word-break: break-all;
+  }
+
+  /* ===== 現場×日マトリクス ===== */
+  table.site-matrix tbody th.row-name { min-width: 130px; }
+  table.site-matrix tbody td.cell {
+    font-size: 10px; line-height: 1.1; white-space: nowrap;
+  }
+
+  /* ===== サマリーパネル ===== */
+  .summary {
+    background: var(--panel); padding: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .summary h2 {
+    margin: 0 0 10px; font-size: 14px; font-weight: 700;
+  }
+  .summary-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .summary-card {
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px; background: #fafaf6;
+  }
+  .summary-card h3 {
+    margin: 0 0 8px; font-size: 12px; font-weight: 700;
+    color: var(--ink-soft);
+  }
+  .summary-row {
+    display: flex; justify-content: space-between;
+    font-size: 12px; padding: 3px 0;
+    border-bottom: 1px dotted var(--line);
+  }
+  .summary-row:last-child { border-bottom: 0; }
+  .summary-row .v { font-weight: 700; }
+
+  /* ===== モーダル ===== */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal-bg.visible { display: flex; }
+  .modal {
+    background: #fff; border-radius: 12px;
+    max-width: 480px; width: 100%;
+    max-height: 80vh; overflow: auto;
+    padding: 20px;
+  }
+  .modal h2 { margin: 0 0 14px; font-size: 16px; }
+  .modal .list-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px; border-bottom: 1px solid var(--line);
+  }
+  .modal .list-item input[type="text"] {
+    flex: 1; padding: 8px; border: 1px solid var(--line);
+    border-radius: 6px; font-size: 14px;
+  }
+  .modal .list-item button {
+    padding: 6px 10px; border: 0; background: #e0e0e0;
+    border-radius: 6px; cursor: pointer;
+  }
+  .modal .add-row {
+    display: flex; gap: 8px; margin-top: 10px;
+  }
+  .modal .add-row input {
+    flex: 1; padding: 10px; border: 1px solid var(--line);
+    border-radius: 6px; font-size: 14px;
+  }
+  .modal .add-row button {
+    padding: 10px 16px; border: 0; background: var(--accent);
+    color: #fff; border-radius: 6px; font-weight: 700; cursor: pointer;
+  }
+  .modal-actions {
+    display: flex; gap: 8px; margin-top: 16px;
+    justify-content: flex-end;
+  }
+  .modal-actions button {
+    padding: 10px 18px; border-radius: 6px;
+    border: 1px solid var(--line); background: #fff;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .modal-actions .primary {
+    background: var(--ink); color: #fff; border-color: var(--ink);
+  }
+
+  /* ===== メニュー ===== */
+  .menu-modal { max-width: 360px; }
+  .menu-btn-large {
+    display: block; width: 100%;
+    padding: 14px; margin-bottom: 8px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: #fff; text-align: left;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+
+  /* レスポンシブ */
+  @media (max-width: 640px) {
+    header h1 { display: none; }
+    .view-tabs button { padding: 8px 10px; font-size: 12px; }
+    .summary-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>現場予定表</h1>
+  <div class="month-nav">
+    <button id="prev-month">‹</button>
+    <div class="month-label" id="month-label">2026年1月</div>
+    <button id="next-month">›</button>
+  </div>
+  <div class="view-tabs">
+    <button data-view="matrix" class="active">名前×日</button>
+    <button data-view="person">個人</button>
+    <button data-view="site">現場×日</button>
+  </div>
+  <button class="menu-btn" id="menu-btn">≡</button>
+  <span id="sync-indicator" class="sync-indicator" title="同期状態">⏳</span>
+</header>
+
+<div class="input-bar" id="input-bar">
+  <span class="label">入力モード →</span>
+  <!-- 動的に現場チップが入る -->
+</div>
+
+<div class="action-row" id="action-row">
+  <span><span class="count" id="sel-count">0</span> 件選択中</span>
+  <span id="sel-target-label" style="color: var(--ink-soft); font-size: 12px;"></span>
+  <button class="clear-sel" id="clear-sel">選択解除</button>
+  <button id="edit-btn" style="display:none; background:#444;">✎ 詳細編集</button>
+  <button id="apply-btn">一括入力</button>
+</div>
+
+<main id="main"></main>
+
+<!-- マスタ編集モーダル -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script type="module">
+'use strict';
+
+// ===== Firebase SDK =====
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, doc, setDoc, getDoc, onSnapshot, enableIndexedDbPersistence
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCLRsGq3B2UO0biK8Ba529noCS09-e7aIM",
+  authDomain: "zaiko-kanri-da727.firebaseapp.com",
+  projectId: "zaiko-kanri-da727",
+  storageBucket: "zaiko-kanri-da727.firebasestorage.app",
+  messagingSenderId: "267149234206",
+  appId: "1:267149234206:web:9b579fbe192af8be3bde0f"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+// オフライン永続化（複数タブでエラーになるが無視）
+enableIndexedDbPersistence(db).catch(()=>{});
+
+// コレクション名（在庫アプリと衝突しないよう専用名で）
+const COL = 'genba_schedule';
+const MASTERS_DOC = doc(db, COL, 'masters');
+const scheduleDoc = (year, month) => doc(db, COL, 'schedules_' + year + '_' + String(month).padStart(2,'0'));
+
+// ===== 同期インジケーター =====
+const syncIndicator = document.getElementById('sync-indicator');
+function setSyncStatus(status) {
+  syncIndicator.className = 'sync-indicator ' + status;
+  syncIndicator.textContent = ({ syncing: '⏳', synced: '✓', error: '⚠' })[status] || '⏳';
+  syncIndicator.title = ({ syncing: '同期中…', synced: '同期済み', error: '同期エラー' })[status];
+}
+setSyncStatus('syncing');
+
+// ===== 初期データ =====
+const DEFAULT_NAMES = ['池田 匡輝','貴島 直行','福田 哉和','貴島 大輔','藤村 佑磨','佐野 裕太','松井 佑太','岩本 峯大','池田 流安','深井 登志史','金丸 勝人'];
+const DEFAULT_SITES = ['事務所','コスモス新富店','コスモス高田店','コスモスあさぎり店','コスモスグリーンランド店','コスモス瓦屋町店','ロッテ九州','旭化成','製錬所','一種講習','一種技能試験','二種講習','二種技能試験','コスモス現調','ロッテ九州現調','天草現調','車両系'];
+const DEFAULT_VEHICLES = ['1号車','2号車','3号車','4号車','5号車'];
+const REST = '休';
+const ERASER = '__erase__';
+const FIXED_SITES = [REST];
+
+// ===== 状態 =====
+const state = {
+  names: [...DEFAULT_NAMES],
+  sites: [...DEFAULT_SITES],
+  vehicles: [...DEFAULT_VEHICLES],
+  // schedule[year][month][name][day] = {site, vehicle}
+  schedule: {}
+};
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth() + 1;
+let currentView = 'matrix';
+let inputMode = null;
+let selectedCells = new Set();
+let currentPerson = state.names[0] || null;
+let mastersLoaded = false;
+let currentScheduleUnsub = null; // 現在監視中の月のunsubscribe関数
+let lastSnapshotMonthKey = ''; // 現在監視中の月キー（重複監視防止）
+let writeInFlight = 0; // 書き込み中カウント
+
+// ===== Firestore 読み書き =====
+
+// マスタを監視（リアルタイム）
+onSnapshot(MASTERS_DOC, (snap) => {
+  if (snap.exists()) {
+    const d = snap.data();
+    if (Array.isArray(d.names)) state.names = d.names;
+    if (Array.isArray(d.sites)) state.sites = d.sites;
+    if (Array.isArray(d.vehicles)) state.vehicles = d.vehicles;
+    // 固定項目を保証
+    FIXED_SITES.forEach(fs => { if (!state.sites.includes(fs)) state.sites.push(fs); });
+    if (currentPerson && !state.names.includes(currentPerson)) currentPerson = state.names[0];
+  } else {
+    // 初回：デフォルト値で作成
+    saveMasters();
+  }
+  mastersLoaded = true;
+  render();
+  if (writeInFlight === 0) setSyncStatus('synced');
+}, (err) => { console.error('masters onSnapshot', err); setSyncStatus('error'); });
+
+async function saveMasters() {
+  writeInFlight++;
+  setSyncStatus('syncing');
+  try {
+    await setDoc(MASTERS_DOC, {
+      names: state.names,
+      sites: state.sites.filter(s => !FIXED_SITES.includes(s)).concat(FIXED_SITES.filter(fs => state.sites.includes(fs))),
+      vehicles: state.vehicles,
+      updatedAt: Date.now()
+    });
+    writeInFlight--;
+    if (writeInFlight === 0) setSyncStatus('synced');
+  } catch(e) {
+    console.error('saveMasters', e);
+    writeInFlight--;
+    setSyncStatus('error');
+  }
+}
+
+// 月切り替え時：その月のスケジュールを購読
+function subscribeMonth(year, month) {
+  const key = year + '_' + month;
+  if (lastSnapshotMonthKey === key && currentScheduleUnsub) return;
+  if (currentScheduleUnsub) currentScheduleUnsub();
+  lastSnapshotMonthKey = key;
+  setSyncStatus('syncing');
+  currentScheduleUnsub = onSnapshot(scheduleDoc(year, month), (snap) => {
+    const entries = (snap.exists() && snap.data().entries) ? snap.data().entries : {};
+    if (!state.schedule[year]) state.schedule[year] = {};
+    state.schedule[year][month] = {};
+    // entries: { "name|day": {site, vehicle} } をネスト構造へ展開
+    Object.entries(entries).forEach(([k, v]) => {
+      const sep = k.lastIndexOf('|');
+      const name = k.substring(0, sep);
+      const day = parseInt(k.substring(sep + 1));
+      if (!state.schedule[year][month][name]) state.schedule[year][month][name] = {};
+      state.schedule[year][month][name][day] = v;
+    });
+    render();
+    if (writeInFlight === 0) setSyncStatus('synced');
+  }, (err) => { console.error('schedule onSnapshot', err); setSyncStatus('error'); });
+}
+
+// 当月のスケジュールをFirestoreに保存（差分のみ）
+async function saveScheduleEntry(year, month, name, day, value) {
+  writeInFlight++;
+  setSyncStatus('syncing');
+  try {
+    const key = name + '|' + day;
+    const docRef = scheduleDoc(year, month);
+    const snap = await getDoc(docRef);
+    const entries = (snap.exists() && snap.data().entries) ? { ...snap.data().entries } : {};
+    if (value) entries[key] = value;
+    else delete entries[key];
+    await setDoc(docRef, { entries, updatedAt: Date.now() });
+    writeInFlight--;
+    if (writeInFlight === 0) setSyncStatus('synced');
+  } catch(e) {
+    console.error('saveScheduleEntry', e);
+    writeInFlight--;
+    setSyncStatus('error');
+  }
+}
+
+// 複数セルを一括保存（一括入力用、1回の書き込みにまとめる）
+async function saveScheduleBatch(year, month, updates /* [{name, day, value}] */) {
+  writeInFlight++;
+  setSyncStatus('syncing');
+  try {
+    const docRef = scheduleDoc(year, month);
+    const snap = await getDoc(docRef);
+    const entries = (snap.exists() && snap.data().entries) ? { ...snap.data().entries } : {};
+    updates.forEach(({ name, day, value }) => {
+      const key = name + '|' + day;
+      if (value) entries[key] = value;
+      else delete entries[key];
+    });
+    await setDoc(docRef, { entries, updatedAt: Date.now() });
+    writeInFlight--;
+    if (writeInFlight === 0) setSyncStatus('synced');
+  } catch(e) {
+    console.error('saveScheduleBatch', e);
+    writeInFlight--;
+    setSyncStatus('error');
+  }
+}
+
+// 月単位の全削除
+async function clearMonth(year, month) {
+  writeInFlight++;
+  setSyncStatus('syncing');
+  try {
+    await setDoc(scheduleDoc(year, month), { entries: {}, updatedAt: Date.now() });
+    writeInFlight--;
+    if (writeInFlight === 0) setSyncStatus('synced');
+  } catch(e) {
+    console.error('clearMonth', e);
+    writeInFlight--;
+    setSyncStatus('error');
+  }
+}
+
+// セルデータ正規化：文字列→オブジェクト形式の統一化
+function normalizeEntry(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'string') return { site: raw, vehicle: '' };
+  return { site: raw.site || '', vehicle: raw.vehicle || '' };
+}
+
+function getEntry(year, month, name, day) {
+  return normalizeEntry(state.schedule?.[year]?.[month]?.[name]?.[day]);
+}
+
+// 表示用：セルに出すラベル（メイン行）
+function entryMainLabel(entry) {
+  if (!entry) return '';
+  return entry.site;
+}
+// 表示用：セルに出すサブラベル（2行目）
+function entrySubLabel(entry) {
+  if (!entry) return '';
+  if (entry.vehicle) return entry.vehicle.replace('号車','号');
+  return '';
+}
+
+function getSchedule(year, month, name, day) {
+  const e = getEntry(year, month, name, day);
+  return e ? e.site : '';
+}
+function setSchedule(year, month, name, day, value) {
+  if (!state.schedule[year]) state.schedule[year] = {};
+  if (!state.schedule[year][month]) state.schedule[year][month] = {};
+  if (!state.schedule[year][month][name]) state.schedule[year][month][name] = {};
+  if (value) state.schedule[year][month][name][day] = value;
+  else delete state.schedule[year][month][name][day];
+}
+
+// ===== ユーティリティ =====
+function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
+function dayOfWeek(y, m, d) { return new Date(y, m-1, d).getDay(); } // 0=日
+const DOW_JP = ['日','月','火','水','木','金','土'];
+
+// ===== 月ナビ =====
+document.getElementById('prev-month').onclick = () => {
+  currentMonth--;
+  if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+  clearSelection();
+  subscribeMonth(currentYear, currentMonth);
+  render();
+};
+document.getElementById('next-month').onclick = () => {
+  currentMonth++;
+  if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+  clearSelection();
+  subscribeMonth(currentYear, currentMonth);
+  render();
+};
+
+// ===== ビュー切替 =====
+document.querySelectorAll('.view-tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.view-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
+    clearSelection();
+    render();
+  };
+});
+
+// ===== 入力モードバー =====
+function renderInputBar() {
+  const bar = document.getElementById('input-bar');
+  bar.innerHTML = '<span class="label">入力モード →</span>';
+  // 通常現場（固定項目は除く）
+  state.sites.forEach(site => {
+    if (FIXED_SITES.includes(site)) return;
+    const chip = document.createElement('button');
+    chip.className = 'site-chip';
+    chip.textContent = site;
+    if (inputMode === site) chip.classList.add('selected');
+    chip.onclick = () => { inputMode = (inputMode === site) ? null : site; renderInputBar(); updateActionRow(); };
+    bar.appendChild(chip);
+  });
+  // 区切り
+  const sep = document.createElement('span');
+  sep.style.cssText = 'width:1px; height:24px; background:var(--line-strong); flex-shrink:0; margin:0 4px;';
+  bar.appendChild(sep);
+  // 休
+  const restChip = document.createElement('button');
+  restChip.className = 'site-chip rest';
+  restChip.textContent = '休';
+  if (inputMode === REST) restChip.classList.add('selected');
+  restChip.onclick = () => { inputMode = (inputMode === REST) ? null : REST; renderInputBar(); updateActionRow(); };
+  bar.appendChild(restChip);
+  // 消しゴム
+  const eraseChip = document.createElement('button');
+  eraseChip.className = 'site-chip eraser';
+  eraseChip.textContent = '消去';
+  if (inputMode === ERASER) eraseChip.classList.add('selected');
+  eraseChip.onclick = () => { inputMode = (inputMode === ERASER) ? null : ERASER; renderInputBar(); updateActionRow(); };
+  bar.appendChild(eraseChip);
+}
+
+function updateActionRow() {
+  const row = document.getElementById('action-row');
+  const count = selectedCells.size;
+  if (count > 0) {
+    row.classList.add('visible');
+    document.getElementById('sel-count').textContent = count;
+    const target = inputMode ? (inputMode === ERASER ? '消去' : inputMode) : '※現場を選択してください';
+    document.getElementById('sel-target-label').textContent = '→ ' + target;
+    document.getElementById('apply-btn').disabled = !inputMode;
+    document.getElementById('apply-btn').style.opacity = inputMode ? 1 : 0.4;
+    // 1セル選択かつそのセルに既存データがあれば「詳細編集」ボタンを表示
+    const editBtn = document.getElementById('edit-btn');
+    if (count === 1) {
+      const key = Array.from(selectedCells)[0];
+      const [name, dayStr] = key.split('|');
+      const entry = getEntry(currentYear, currentMonth, name, parseInt(dayStr));
+      if (entry && entry.site && entry.site !== REST) {
+        editBtn.style.display = '';
+      } else {
+        editBtn.style.display = 'none';
+      }
+    } else {
+      editBtn.style.display = 'none';
+    }
+  } else {
+    row.classList.remove('visible');
+  }
+}
+
+document.getElementById('clear-sel').onclick = clearSelection;
+document.getElementById('apply-btn').onclick = applyToSelection;
+document.getElementById('edit-btn').onclick = openEditDialog;
+
+function openEditDialog() {
+  if (selectedCells.size !== 1) return;
+  const key = Array.from(selectedCells)[0];
+  const [name, dayStr] = key.split('|');
+  const day = parseInt(dayStr);
+  const entry = getEntry(currentYear, currentMonth, name, day) || { site: '', vehicle: '' };
+
+  let html = `<h2>${escapeHtml(name)} ${currentMonth}/${day} の編集</h2>`;
+  html += `<div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">現場: <b>${escapeHtml(entry.site)}</b></div>`;
+
+  html += `<div style="margin-bottom:14px;">
+    <div style="font-size:13px; font-weight:700; margin-bottom:6px;">車両</div>
+    <div style="display:flex; flex-wrap:wrap; gap:6px;">`;
+  html += `<button class="edit-vehicle" data-val="" style="padding:8px 12px; border-radius:999px; border:1.5px solid var(--line); background:${!entry.vehicle ? 'var(--ink)' : '#fff'}; color:${!entry.vehicle ? '#fff' : ''}; cursor:pointer; font-size:13px;">なし</button>`;
+  state.vehicles.forEach(v => {
+    const sel = entry.vehicle === v;
+    html += `<button class="edit-vehicle" data-val="${escapeAttr(v)}" style="padding:8px 12px; border-radius:999px; border:1.5px solid var(--line); background:${sel ? 'var(--ink)' : '#fff'}; color:${sel ? '#fff' : ''}; cursor:pointer; font-size:13px;">${escapeHtml(v)}</button>`;
+  });
+  html += `</div></div>`;
+
+  html += `<div class="modal-actions">
+    <button onclick="closeModal()">キャンセル</button>
+    <button class="primary" id="edit-ok">保存</button>
+  </div>`;
+  openModal(html);
+
+  let newVehicle = entry.vehicle;
+  document.querySelectorAll('.edit-vehicle').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.edit-vehicle').forEach(b => {
+        b.style.background = '#fff'; b.style.color = '';
+      });
+      btn.style.background = 'var(--ink)'; btn.style.color = '#fff';
+      newVehicle = btn.dataset.val;
+    };
+  });
+  document.getElementById('edit-ok').onclick = () => {
+    const newEntry = {
+      site: entry.site,
+      vehicle: newVehicle
+    };
+    setSchedule(currentYear, currentMonth, name, day, newEntry); // 楽観的UI更新
+    saveScheduleEntry(currentYear, currentMonth, name, day, newEntry);
+    selectedCells.clear();
+    closeModal();
+    updateActionRow();
+    render();
+  };
+}
+
+function clearSelection() {
+  // 既存の選択セルからクラスを外す
+  document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+  selectedCells.clear();
+  updateActionRow();
+}
+
+function applyToSelection() {
+  if (!inputMode || selectedCells.size === 0) return;
+
+  // 休・消去はダイアログ不要で即適用
+  if (inputMode === REST || inputMode === ERASER) {
+    const updates = [];
+    selectedCells.forEach(key => {
+      const [name, dayStr] = key.split('|');
+      const day = parseInt(dayStr);
+      const value = inputMode === ERASER ? '' : { site: REST, vehicle: '' };
+      setSchedule(currentYear, currentMonth, name, day, value); // 楽観的UI
+      updates.push({ name, day, value });
+    });
+    saveScheduleBatch(currentYear, currentMonth, updates);
+    selectedCells.clear();
+    updateActionRow();
+    render();
+    return;
+  }
+
+  // 現場：車両選択ダイアログを開く
+  openApplyDialog();
+}
+
+function openApplyDialog() {
+  let html = `<h2>${inputMode} を ${selectedCells.size} 件に入力</h2>`;
+
+  // 車両選択
+  html += `<div style="margin-bottom:14px;">
+    <div style="font-size:13px; font-weight:700; margin-bottom:6px;">車両（任意）</div>
+    <div style="display:flex; flex-wrap:wrap; gap:6px;">`;
+  html += `<button class="opt-vehicle" data-val="" style="padding:8px 12px; border-radius:999px; border:1.5px solid var(--line); background:var(--ink); color:#fff; cursor:pointer; font-size:13px;">なし</button>`;
+  state.vehicles.forEach(v => {
+    html += `<button class="opt-vehicle" data-val="${escapeAttr(v)}" style="padding:8px 12px; border-radius:999px; border:1.5px solid var(--line); background:#fff; cursor:pointer; font-size:13px;">${escapeHtml(v)}</button>`;
+  });
+  html += `</div></div>`;
+
+  html += `<div class="modal-actions">
+    <button onclick="closeModal()">キャンセル</button>
+    <button class="primary" id="apply-dialog-ok">入力する</button>
+  </div>`;
+  openModal(html);
+
+  let selectedVehicle = '';
+
+  document.querySelectorAll('.opt-vehicle').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.opt-vehicle').forEach(b => {
+        b.style.background = '#fff'; b.style.color = ''; b.style.borderColor = 'var(--line)';
+      });
+      btn.style.background = 'var(--ink)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--ink)';
+      selectedVehicle = btn.dataset.val;
+    };
+  });
+
+  document.getElementById('apply-dialog-ok').onclick = () => {
+    const updates = [];
+    selectedCells.forEach(key => {
+      const [name, dayStr] = key.split('|');
+      const day = parseInt(dayStr);
+      const entry = {
+        site: inputMode,
+        vehicle: selectedVehicle
+      };
+      setSchedule(currentYear, currentMonth, name, day, entry); // 楽観的UI
+      updates.push({ name, day, value: entry });
+    });
+    saveScheduleBatch(currentYear, currentMonth, updates);
+    selectedCells.clear();
+    closeModal();
+    updateActionRow();
+    render();
+  };
+}
+
+function toggleCell(name, day) {
+  const key = `${name}|${day}`;
+  if (selectedCells.has(key)) selectedCells.delete(key);
+  else selectedCells.add(key);
+  // 全体再描画せず、該当セルのクラスだけ更新（スクロール位置を保持）
+  document.querySelectorAll(`[data-name="${cssEscape(name)}"][data-day="${day}"]`).forEach(el => {
+    el.classList.toggle('selected', selectedCells.has(key));
+  });
+  updateActionRow();
+}
+
+// CSSセレクタ用のエスケープ（属性値内のクォートや空白を扱う）
+function cssEscape(s) {
+  if (window.CSS && window.CSS.escape) return window.CSS.escape(s);
+  return String(s).replace(/(["\\\\])/g, '\\\\$1');
+}
+
+// ===== 月ラベル =====
+function renderMonthLabel() {
+  document.getElementById('month-label').textContent = `${currentYear}年${currentMonth}月`;
+}
+
+// ===== マトリクス表示（名前×日） =====
+function renderMatrix() {
+  const main = document.getElementById('main');
+  const days = daysInMonth(currentYear, currentMonth);
+
+  let html = '<div class="matrix-wrap"><table class="matrix"><thead><tr>';
+  html += '<th class="col-name">名前</th>';
+  for (let d = 1; d <= days; d++) {
+    const dow = dayOfWeek(currentYear, currentMonth, d);
+    const cls = dow === 0 ? 'day-sun' : (dow === 6 ? 'day-sat' : '');
+    html += `<th class="${cls}">${d}<br><span style="font-size:9px">${DOW_JP[dow]}</span></th>`;
+  }
+  html += '<th class="col-total">出勤</th><th class="col-total">休</th></tr></thead><tbody>';
+
+  state.names.forEach(name => {
+    html += `<tr><th class="row-name">${name}</th>`;
+    let workCount = 0, restCount = 0;
+    for (let d = 1; d <= days; d++) {
+      const entry = getEntry(currentYear, currentMonth, name, d);
+      const v = entry ? entry.site : '';
+      const dow = dayOfWeek(currentYear, currentMonth, d);
+      const dowCls = dow === 0 ? 'day-sun' : (dow === 6 ? 'day-sat' : '');
+      const key = `${name}|${d}`;
+      const isSel = selectedCells.has(key);
+      let cls = 'cell ' + dowCls;
+      if (v === REST) { cls += ' is-rest'; restCount++; }
+      else if (v) { cls += ' has-value'; workCount++; }
+      if (isSel) cls += ' selected';
+      // セル内容：メイン（現場名）と サブ（車両）
+      let content = '';
+      if (entry) {
+        const main = entryMainLabel(entry);
+        const sub = entrySubLabel(entry);
+        content = `<div class="cell-main">${escapeHtml(main)}</div>`;
+        if (sub) content += `<div class="cell-sub">${escapeHtml(sub)}</div>`;
+      }
+      html += `<td class="${cls}" data-name="${escapeAttr(name)}" data-day="${d}">${content}</td>`;
+    }
+    html += `<td class="total">${workCount}</td><td class="total">${restCount}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+
+  main.innerHTML = html;
+  bindCellTaps();
+}
+
+// ===== 個人カレンダー =====
+function renderPerson() {
+  const main = document.getElementById('main');
+  const days = daysInMonth(currentYear, currentMonth);
+
+  let html = '<div class="person-view"><div class="person-selector">';
+  state.names.forEach(name => {
+    const cls = (name === currentPerson) ? 'active' : '';
+    html += `<button class="${cls}" data-person="${escapeAttr(name)}">${name}</button>`;
+  });
+  html += '</div>';
+
+  // カレンダーグリッド
+  html += '<div class="calendar-grid">';
+  ['日','月','火','水','木','金','土'].forEach((d,i) => {
+    const cls = i === 0 ? 'dow sun' : (i === 6 ? 'dow sat' : 'dow');
+    html += `<div class="${cls}">${d}</div>`;
+  });
+  const firstDow = dayOfWeek(currentYear, currentMonth, 1);
+  for (let i = 0; i < firstDow; i++) html += '<div class="day-cell empty"></div>';
+
+  let workCount = 0, restCount = 0;
+  const siteCount = {};
+  for (let d = 1; d <= days; d++) {
+    const entry = getEntry(currentYear, currentMonth, currentPerson, d);
+    const v = entry ? entry.site : '';
+    const dow = dayOfWeek(currentYear, currentMonth, d);
+    const dowCls = dow === 0 ? 'sun' : (dow === 6 ? 'sat' : '');
+    const key = `${currentPerson}|${d}`;
+    const isSel = selectedCells.has(key);
+    let cls = 'day-cell';
+    if (v === REST) { cls += ' is-rest'; restCount++; }
+    else if (v) { cls += ' has-value'; workCount++; siteCount[v] = (siteCount[v]||0)+1; }
+    if (isSel) cls += ' selected';
+    html += `<div class="${cls}" data-name="${escapeAttr(currentPerson)}" data-day="${d}">`;
+    html += `<div class="day-num ${dowCls}">${d}</div>`;
+    if (entry) {
+      const main = entryMainLabel(entry);
+      const sub = entrySubLabel(entry);
+      html += `<div class="site-name">${escapeHtml(main)}`;
+      if (sub) html += `<br><span style="font-size:9px; opacity:0.75;">${escapeHtml(sub)}</span>`;
+      html += `</div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // 個人サマリー
+  html += '<div class="summary" style="margin-top:16px; border-radius:10px; border:1px solid var(--line);">';
+  html += `<h2>${currentPerson} のサマリー</h2>`;
+  html += `<div class="summary-grid">`;
+  html += `<div class="summary-card"><h3>出勤・休日</h3>`;
+  html += `<div class="summary-row"><span>出勤日数</span><span class="v">${workCount} 日</span></div>`;
+  html += `<div class="summary-row"><span>休日数</span><span class="v">${restCount} 日</span></div>`;
+  html += `<div class="summary-row"><span>未入力</span><span class="v">${days - workCount - restCount} 日</span></div>`;
+  html += `</div>`;
+  html += `<div class="summary-card"><h3>現場別工数</h3>`;
+  const sortedSites = Object.entries(siteCount).sort((a,b) => b[1]-a[1]);
+  if (sortedSites.length === 0) {
+    html += '<div style="color:var(--ink-soft); font-size:12px;">データなし</div>';
+  } else {
+    sortedSites.forEach(([s,c]) => {
+      html += `<div class="summary-row"><span>${escapeHtml(s)}</span><span class="v">${c} 日</span></div>`;
+    });
+  }
+  html += `</div></div></div>`;
+
+  html += '</div>';
+  main.innerHTML = html;
+
+  document.querySelectorAll('[data-person]').forEach(btn => {
+    btn.onclick = () => { currentPerson = btn.dataset.person; clearSelection(); render(); };
+  });
+  bindCellTaps();
+}
+
+// ===== 現場×日マトリクス =====
+function renderSiteMatrix() {
+  const main = document.getElementById('main');
+  const days = daysInMonth(currentYear, currentMonth);
+
+  // 現場ごとに、日ごとの担当者リストを構築
+  // entries[site][day] = [{name, vehicle}, ...]
+  const byDay = {};
+  state.names.forEach(name => {
+    for (let d = 1; d <= days; d++) {
+      const entry = getEntry(currentYear, currentMonth, name, d);
+      if (!entry || !entry.site) continue;
+      const site = entry.site;
+      if (!byDay[site]) byDay[site] = {};
+      if (!byDay[site][d]) byDay[site][d] = [];
+      byDay[site][d].push({ name, vehicle: entry.vehicle });
+    }
+  });
+
+  let html = '<div class="matrix-wrap"><table class="matrix site-matrix"><thead><tr>';
+  html += '<th class="col-name">現場</th>';
+  for (let d = 1; d <= days; d++) {
+    const dow = dayOfWeek(currentYear, currentMonth, d);
+    const cls = dow === 0 ? 'day-sun' : (dow === 6 ? 'day-sat' : '');
+    html += `<th class="${cls}">${d}<br><span style="font-size:9px">${DOW_JP[dow]}</span></th>`;
+  }
+  html += '<th class="col-total">計</th></tr></thead><tbody>';
+
+  // 表示する現場一覧 = 通常現場 + 休（固定）
+  const displaySites = [];
+  state.sites.forEach(s => { if (!FIXED_SITES.includes(s) && !displaySites.includes(s)) displaySites.push(s); });
+  displaySites.push(REST);
+
+  displaySites.forEach(site => {
+    let total = 0;
+    html += `<tr><th class="row-name">${site}</th>`;
+    for (let d = 1; d <= days; d++) {
+      const dow = dayOfWeek(currentYear, currentMonth, d);
+      const dowCls = dow === 0 ? 'day-sun' : (dow === 6 ? 'day-sat' : '');
+      const entries = byDay[site]?.[d] || [];
+      total += entries.length;
+      let cls = 'cell ' + dowCls;
+      if (site === REST && entries.length > 0) cls += ' is-rest';
+      else if (entries.length > 0) cls += ' has-value';
+      // 姓のみ + 車両番号短縮
+      const lines = entries.map(e => {
+        const surname = e.name.split(' ')[0];
+        const vehShort = e.vehicle ? e.vehicle.replace('号車','号') : '';
+        return vehShort ? `${surname}<span style="font-size:9px; opacity:0.7;">/${vehShort}</span>` : surname;
+      });
+      html += `<td class="${cls}">${lines.join('<br>')}</td>`;
+    }
+    html += `<td class="total">${total}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  main.innerHTML = html;
+}
+
+// ===== セルタップバインド =====
+function bindCellTaps() {
+  document.querySelectorAll('[data-name][data-day]').forEach(el => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.name;
+      const day = parseInt(el.dataset.day);
+      toggleCell(name, day);
+    });
+  });
+}
+
+// ===== サマリー =====
+function renderSummary() {
+  const days = daysInMonth(currentYear, currentMonth);
+  // 全体サマリー：現場別工数、人別出勤
+  const siteCount = {};
+  const personCount = {};
+  state.names.forEach(name => {
+    personCount[name] = { work: 0, rest: 0 };
+    for (let d = 1; d <= days; d++) {
+      const v = getSchedule(currentYear, currentMonth, name, d);
+      if (!v) continue;
+      if (v === REST) personCount[name].rest++;
+      else {
+        personCount[name].work++;
+        siteCount[v] = (siteCount[v] || 0) + 1;
+      }
+    }
+  });
+
+  let html = '<div class="summary"><h2>月次サマリー</h2><div class="summary-grid">';
+  html += '<div class="summary-card"><h3>個人別 出勤/休</h3>';
+  state.names.forEach(name => {
+    const p = personCount[name];
+    html += `<div class="summary-row"><span>${escapeHtml(name)}</span><span class="v">${p.work} / ${p.rest}</span></div>`;
+  });
+  html += '</div>';
+  html += '<div class="summary-card"><h3>現場別 延べ工数</h3>';
+  const sorted = Object.entries(siteCount).sort((a,b) => b[1]-a[1]);
+  if (sorted.length === 0) html += '<div style="color:var(--ink-soft); font-size:12px;">データなし</div>';
+  else sorted.forEach(([s,c]) => {
+    html += `<div class="summary-row"><span>${escapeHtml(s)}</span><span class="v">${c} 人日</span></div>`;
+  });
+  html += '</div></div></div>';
+  return html;
+}
+
+// ===== メイン描画 =====
+function render() {
+  renderMonthLabel();
+  renderInputBar();
+  updateActionRow();
+  if (currentView === 'matrix') renderMatrix();
+  else if (currentView === 'person') renderPerson();
+  else renderSiteMatrix();
+
+  if (currentView === 'matrix' || currentView === 'site') {
+    document.getElementById('main').insertAdjacentHTML('beforeend', renderSummary());
+  }
+}
+
+// ===== モーダル制御 =====
+const modalBg = document.getElementById('modal-bg');
+const modalContent = document.getElementById('modal-content');
+modalBg.addEventListener('click', (e) => { if (e.target === modalBg) closeModal(); });
+function openModal(html) { modalContent.innerHTML = html; modalBg.classList.add('visible'); }
+function closeModal() { modalBg.classList.remove('visible'); }
+
+// ===== メニュー =====
+document.getElementById('menu-btn').onclick = () => {
+  openModal(`
+    <h2>メニュー</h2>
+    <button class="menu-btn-large" id="m-names">👥 名前リストを編集</button>
+    <button class="menu-btn-large" id="m-sites">📋 現場リストを編集</button>
+    <button class="menu-btn-large" id="m-vehicles">🚐 車両リストを編集</button>
+    <button class="menu-btn-large" id="m-export-csv">📤 CSV出力（今月）</button>
+    <button class="menu-btn-large" id="m-export-excel">📊 Excel互換出力（今月）</button>
+    <button class="menu-btn-large" id="m-export-year">📦 年間Excel出力</button>
+    <button class="menu-btn-large" id="m-clear-month" style="color: var(--accent);">🗑 今月のデータをクリア</button>
+    <div class="modal-actions"><button onclick="closeModal()">閉じる</button></div>
+  `);
+  document.getElementById('m-names').onclick = () => editList('names');
+  document.getElementById('m-sites').onclick = () => editList('sites');
+  document.getElementById('m-vehicles').onclick = () => editList('vehicles');
+  document.getElementById('m-export-csv').onclick = exportCSV;
+  document.getElementById('m-export-excel').onclick = exportMonthExcel;
+  document.getElementById('m-export-year').onclick = exportYearExcel;
+  document.getElementById('m-clear-month').onclick = () => {
+    if (confirm(`${currentYear}年${currentMonth}月のデータを全部消しますか？`)) {
+      if (state.schedule[currentYear]) delete state.schedule[currentYear][currentMonth];
+      clearMonth(currentYear, currentMonth);
+      closeModal(); render();
+    }
+  };
+};
+window.closeModal = closeModal;
+
+// ===== マスタ編集 =====
+function editList(kind) {
+  const arr = state[kind];
+  const title = kind === 'names' ? '名前リスト' : (kind === 'sites' ? '現場リスト' : '車両リスト');
+  const itemLabel = kind === 'names' ? '名前' : (kind === 'sites' ? '現場' : '車両');
+  let html = `<h2>${title}を編集</h2>`;
+  if (kind === 'sites') {
+    html += `<div style="font-size:11px; color:var(--ink-soft); margin-bottom:8px;">🔒 印は固定項目（編集・削除不可）</div>`;
+  }
+  html += `<div id="list-items">`;
+  arr.forEach((item, i) => {
+    const isFixed = kind === 'sites' && FIXED_SITES.includes(item);
+    if (isFixed) {
+      html += `<div class="list-item" style="background:#fafaf6;">
+        <input type="text" value="${escapeAttr(item)}" disabled style="opacity:0.6;">
+        <span style="padding:6px 10px; font-size:11px; color:var(--ink-soft);">🔒</span>
+      </div>`;
+    } else {
+      html += `<div class="list-item">
+        <input type="text" value="${escapeAttr(item)}" data-idx="${i}">
+        <button data-del="${i}">削除</button>
+      </div>`;
+    }
+  });
+  // 固定項目がリストに未登録なら、見せるだけ追加（保存時に補完）
+  if (kind === 'sites') {
+    FIXED_SITES.forEach(fs => {
+      if (!arr.includes(fs)) {
+        html += `<div class="list-item" style="background:#fafaf6;">
+          <input type="text" value="${escapeAttr(fs)}" disabled style="opacity:0.6;">
+          <span style="padding:6px 10px; font-size:11px; color:var(--ink-soft);">🔒</span>
+        </div>`;
+      }
+    });
+  }
+  html += `</div><div class="add-row">
+    <input type="text" id="new-item" placeholder="新しい${itemLabel}を追加">
+    <button id="add-btn">追加</button>
+  </div>
+  <div class="modal-actions">
+    <button onclick="closeModal()">キャンセル</button>
+    <button class="primary" id="save-btn">保存</button>
+  </div>`;
+  openModal(html);
+
+  document.querySelectorAll('[data-del]').forEach(b => {
+    b.onclick = () => {
+      const i = parseInt(b.dataset.del);
+      arr.splice(i, 1);
+      editList(kind);
+    };
+  });
+  document.getElementById('add-btn').onclick = () => {
+    const v = document.getElementById('new-item').value.trim();
+    if (!v) return;
+    if (kind === 'sites' && FIXED_SITES.includes(v)) {
+      alert(`「${v}」は固定項目なので追加できません`);
+      return;
+    }
+    if (arr.includes(v)) {
+      alert(`「${v}」は既に登録されています`);
+      return;
+    }
+    arr.push(v);
+    editList(kind);
+  };
+  document.getElementById('save-btn').onclick = () => {
+    document.querySelectorAll('#list-items input[data-idx]').forEach(inp => {
+      const i = parseInt(inp.dataset.idx);
+      arr[i] = inp.value.trim();
+    });
+    // 空を除去
+    state[kind] = arr.filter(x => x);
+    // 現場の場合、固定項目を保証
+    if (kind === 'sites') {
+      FIXED_SITES.forEach(fs => {
+        if (!state.sites.includes(fs)) state.sites.push(fs);
+      });
+    }
+    saveMasters(); closeModal();
+    if (currentPerson && !state.names.includes(currentPerson)) currentPerson = state.names[0];
+    render();
+  };
+}
+
+// ===== 出力 =====
+// セルを出力用文字列に変換（「現場名」+ 改行 + 「車1」）
+function entryToCellString(entry) {
+  if (!entry) return '';
+  const main = entryMainLabel(entry);
+  const sub = entrySubLabel(entry);
+  if (sub) return `${main}\n${sub}`;
+  return main;
+}
+
+function exportCSV() {
+  const days = daysInMonth(currentYear, currentMonth);
+  const rows = [];
+  const header = ['名前'];
+  for (let d = 1; d <= days; d++) header.push(`${d}(${DOW_JP[dayOfWeek(currentYear, currentMonth, d)]})`);
+  header.push('出勤', '休');
+  rows.push(header);
+  state.names.forEach(name => {
+    const row = [name];
+    let w = 0, r = 0;
+    for (let d = 1; d <= days; d++) {
+      const entry = getEntry(currentYear, currentMonth, name, d);
+      row.push(entryToCellString(entry));
+      if (entry) {
+        if (entry.site === REST) r++;
+        else if (entry.site) w++;
+      }
+    }
+    row.push(w, r);
+    rows.push(row);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  downloadBlob(blob, `${currentYear}年${currentMonth}月_出勤表.csv`);
+  closeModal();
+}
+
+function exportMonthExcel() {
+  // SheetJSがなくても動くよう、Excelで開けるxml形式（SpreadsheetML2003）を生成
+  const xml = buildSpreadsheetML([{ year: currentYear, month: currentMonth }]);
+  const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+  downloadBlob(blob, `${currentYear}年${currentMonth}月_出勤表.xls`);
+  closeModal();
+}
+
+async function exportYearExcel() {
+  // 表示中以外の月もFirestoreから取得してstateに展開
+  setSyncStatus('syncing');
+  try {
+    for (let m = 1; m <= 12; m++) {
+      if (m === currentMonth && state.schedule[currentYear]?.[m]) continue;
+      const snap = await getDoc(scheduleDoc(currentYear, m));
+      if (!state.schedule[currentYear]) state.schedule[currentYear] = {};
+      state.schedule[currentYear][m] = {};
+      if (snap.exists() && snap.data().entries) {
+        Object.entries(snap.data().entries).forEach(([k, v]) => {
+          const sep = k.lastIndexOf('|');
+          const name = k.substring(0, sep);
+          const day = parseInt(k.substring(sep + 1));
+          if (!state.schedule[currentYear][m][name]) state.schedule[currentYear][m][name] = {};
+          state.schedule[currentYear][m][name][day] = v;
+        });
+      }
+    }
+    setSyncStatus('synced');
+  } catch(e) {
+    console.error('exportYearExcel fetch', e);
+    setSyncStatus('error');
+    alert('年間データの取得に失敗しました');
+    return;
+  }
+  const sheets = [];
+  for (let m = 1; m <= 12; m++) sheets.push({ year: currentYear, month: m });
+  const xml = buildSpreadsheetML(sheets);
+  const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+  downloadBlob(blob, `${currentYear}年_年間出勤表.xls`);
+  closeModal();
+}
+
+function buildSpreadsheetML(sheets) {
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+ <Style ss:ID="title"><Font ss:Bold="1" ss:Size="14"/></Style>
+ <Style ss:ID="head"><Font ss:Bold="1"/><Interior ss:Color="#EEEEEE" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style>
+ <Style ss:ID="sun"><Font ss:Color="#C8482B"/></Style>
+ <Style ss:ID="sat"><Font ss:Color="#2B6CB8"/></Style>
+ <Style ss:ID="cell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style>
+</Styles>`;
+
+  sheets.forEach(({year, month}) => {
+    const days = daysInMonth(year, month);
+    xml += `<Worksheet ss:Name="${month}月"><Table>`;
+    xml += `<Row><Cell ss:StyleID="title"><Data ss:Type="String">${year}年${month}月 出勤表</Data></Cell></Row>`;
+    // ヘッダ
+    xml += `<Row><Cell ss:StyleID="head"><Data ss:Type="String">名前</Data></Cell>`;
+    for (let d = 1; d <= days; d++) {
+      const dow = dayOfWeek(year, month, d);
+      const sid = dow === 0 ? 'sun' : (dow === 6 ? 'sat' : 'head');
+      xml += `<Cell ss:StyleID="${sid}"><Data ss:Type="String">${d}(${DOW_JP[dow]})</Data></Cell>`;
+    }
+    xml += `<Cell ss:StyleID="head"><Data ss:Type="String">出勤</Data></Cell>`;
+    xml += `<Cell ss:StyleID="head"><Data ss:Type="String">休</Data></Cell></Row>`;
+    // データ
+    state.names.forEach(name => {
+      xml += `<Row><Cell ss:StyleID="cell"><Data ss:Type="String">${escapeXml(name)}</Data></Cell>`;
+      let w = 0, r = 0;
+      for (let d = 1; d <= days; d++) {
+        const entry = getEntry(year, month, name, d);
+        const cellStr = entryToCellString(entry);
+        // SpreadsheetMLで改行は &#10; で表現
+        const xmlVal = escapeXml(cellStr).replace(/\n/g, '&#10;');
+        xml += `<Cell ss:StyleID="cell"><Data ss:Type="String">${xmlVal}</Data></Cell>`;
+        if (entry) {
+          if (entry.site === REST) r++;
+          else if (entry.site) w++;
+        }
+      }
+      xml += `<Cell ss:StyleID="cell"><Data ss:Type="Number">${w}</Data></Cell>`;
+      xml += `<Cell ss:StyleID="cell"><Data ss:Type="Number">${r}</Data></Cell></Row>`;
+    });
+    xml += `</Table></Worksheet>`;
+  });
+  xml += `</Workbook>`;
+  return xml;
+}
+
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+// ===== エスケープ =====
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s) { return escapeHtml(s); }
+function escapeXml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c])); }
+
+// ===== 起動 =====
+subscribeMonth(currentYear, currentMonth);
+render();
+</script>
+</body>
+</html>
