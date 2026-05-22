@@ -211,6 +211,17 @@
     margin-top: 1px;
     font-weight: 500;
   }
+  table.matrix tbody td.cell.has-stay {
+    box-shadow: inset 0 0 0 2px #c8a648;
+  }
+  table.matrix tbody td.cell.has-stay::before {
+    content: '🏨';
+    position: absolute;
+    top: 1px; right: 1px;
+    font-size: 9px;
+    line-height: 1;
+    pointer-events: none;
+  }
   table.matrix tbody td.cell.day-sun { background: #fdf2ee; }
   table.matrix tbody td.cell.day-sat { background: #eef4fb; }
   table.matrix tbody td.cell.has-value {
@@ -278,6 +289,16 @@
   .calendar-grid .day-cell.has-value { background: var(--accent-soft); }
   .calendar-grid .day-cell.is-rest { background: var(--rest-bg); color: var(--rest); }
   .calendar-grid .day-cell.is-gencho { background: var(--gencho-bg); color: var(--gencho); font-weight: 700; }
+  .calendar-grid .day-cell.has-stay {
+    position: relative;
+    box-shadow: inset 0 0 0 2px #c8a648;
+  }
+  .calendar-grid .day-cell.has-stay::after {
+    content: '🏨';
+    position: absolute;
+    top: 2px; right: 4px;
+    font-size: 11px;
+  }
   .calendar-grid .day-cell.selected {
     outline: 3px solid var(--selected-border); outline-offset: -3px;
   }
@@ -619,8 +640,8 @@ async function clearMonth(year, month) {
 // セルデータ正規化：文字列→オブジェクト形式の統一化
 function normalizeEntry(raw) {
   if (!raw) return null;
-  if (typeof raw === 'string') return { site: raw, vehicle: '' };
-  return { site: raw.site || '', vehicle: raw.vehicle || '' };
+  if (typeof raw === 'string') return { site: raw, vehicle: '', stay: false };
+  return { site: raw.site || '', vehicle: raw.vehicle || '', stay: !!raw.stay };
 }
 
 function getEntry(year, month, name, day) {
@@ -635,8 +656,10 @@ function entryMainLabel(entry) {
 // 表示用：セルに出すサブラベル（2行目）
 function entrySubLabel(entry) {
   if (!entry) return '';
-  if (entry.vehicle) return entry.vehicle.replace('号車','号');
-  return '';
+  const parts = [];
+  if (entry.vehicle) parts.push(entry.vehicle.replace('号車','号'));
+  if (entry.stay) parts.push('🏨泊');
+  return parts.join(' ');
 }
 
 function getSchedule(year, month, name, day) {
@@ -755,7 +778,7 @@ function openEditDialog() {
   const key = Array.from(selectedCells)[0];
   const [name, dayStr] = key.split('|');
   const day = parseInt(dayStr);
-  const entry = getEntry(currentYear, currentMonth, name, day) || { site: '', vehicle: '' };
+  const entry = getEntry(currentYear, currentMonth, name, day) || { site: '', vehicle: '', stay: false };
 
   let html = `<h2>${escapeHtml(name)} ${currentMonth}/${day} の編集</h2>`;
   html += `<div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">現場: <b>${escapeHtml(entry.site)}</b></div>`;
@@ -769,6 +792,14 @@ function openEditDialog() {
     html += `<button class="edit-vehicle" data-val="${escapeAttr(v)}" style="padding:8px 12px; border-radius:999px; border:1.5px solid var(--line); background:${sel ? 'var(--ink)' : '#fff'}; color:${sel ? '#fff' : ''}; cursor:pointer; font-size:13px;">${escapeHtml(v)}</button>`;
   });
   html += `</div></div>`;
+
+  // 宿泊チェック
+  html += `<div style="margin-bottom:14px;">
+    <label style="display:flex; align-items:center; gap:10px; padding:12px; background:#fafaf6; border:1.5px solid var(--line); border-radius:8px; cursor:pointer; font-size:14px; font-weight:600;">
+      <input type="checkbox" id="edit-stay" ${entry.stay ? 'checked' : ''} style="width:22px; height:22px; cursor:pointer;">
+      <span>🏨 宿泊あり（出張としてカウント）</span>
+    </label>
+  </div>`;
 
   html += `<div class="modal-actions">
     <button onclick="closeModal()">キャンセル</button>
@@ -789,7 +820,8 @@ function openEditDialog() {
   document.getElementById('edit-ok').onclick = () => {
     const newEntry = {
       site: entry.site,
-      vehicle: newVehicle
+      vehicle: newVehicle,
+      stay: document.getElementById('edit-stay').checked
     };
     setSchedule(currentYear, currentMonth, name, day, newEntry); // 楽観的UI更新
     saveScheduleEntry(currentYear, currentMonth, name, day, newEntry);
@@ -844,6 +876,14 @@ function openApplyDialog() {
   });
   html += `</div></div>`;
 
+  // 宿泊チェック
+  html += `<div style="margin-bottom:14px;">
+    <label style="display:flex; align-items:center; gap:10px; padding:12px; background:#fafaf6; border:1.5px solid var(--line); border-radius:8px; cursor:pointer; font-size:14px; font-weight:600;">
+      <input type="checkbox" id="opt-stay" style="width:22px; height:22px; cursor:pointer;">
+      <span>🏨 宿泊あり（出張としてカウント）</span>
+    </label>
+  </div>`;
+
   html += `<div class="modal-actions">
     <button onclick="closeModal()">キャンセル</button>
     <button class="primary" id="apply-dialog-ok">入力する</button>
@@ -863,15 +903,17 @@ function openApplyDialog() {
   });
 
   document.getElementById('apply-dialog-ok').onclick = () => {
+    const stay = document.getElementById('opt-stay').checked;
     const updates = [];
     selectedCells.forEach(key => {
       const [name, dayStr] = key.split('|');
       const day = parseInt(dayStr);
       const entry = {
         site: inputMode,
-        vehicle: selectedVehicle
+        vehicle: selectedVehicle,
+        stay: stay
       };
-      setSchedule(currentYear, currentMonth, name, day, entry); // 楽観的UI
+      setSchedule(currentYear, currentMonth, name, day, entry);
       updates.push({ name, day, value: entry });
     });
     saveScheduleBatch(currentYear, currentMonth, updates);
@@ -931,6 +973,7 @@ function renderMatrix() {
       let cls = 'cell ' + dowCls;
       if (v === REST) { cls += ' is-rest'; restCount++; }
       else if (v) { cls += ' has-value'; workCount++; }
+      if (entry && entry.stay) cls += ' has-stay';
       if (isSel) cls += ' selected';
       // セル内容：メイン（現場名）と サブ（車両）
       let content = '';
@@ -971,8 +1014,9 @@ function renderPerson() {
   const firstDow = dayOfWeek(currentYear, currentMonth, 1);
   for (let i = 0; i < firstDow; i++) html += '<div class="day-cell empty"></div>';
 
-  let workCount = 0, restCount = 0;
+  let workCount = 0, restCount = 0, stayCount = 0;
   const siteCount = {};
+  const siteStayCount = {};
   for (let d = 1; d <= days; d++) {
     const entry = getEntry(currentYear, currentMonth, currentPerson, d);
     const v = entry ? entry.site : '';
@@ -982,7 +1026,16 @@ function renderPerson() {
     const isSel = selectedCells.has(key);
     let cls = 'day-cell';
     if (v === REST) { cls += ' is-rest'; restCount++; }
-    else if (v) { cls += ' has-value'; workCount++; siteCount[v] = (siteCount[v]||0)+1; }
+    else if (v) {
+      cls += ' has-value';
+      workCount++;
+      siteCount[v] = (siteCount[v]||0)+1;
+      if (entry.stay) {
+        stayCount++;
+        siteStayCount[v] = (siteStayCount[v]||0)+1;
+      }
+    }
+    if (entry && entry.stay) cls += ' has-stay';
     if (isSel) cls += ' selected';
     html += `<div class="${cls}" data-name="${escapeAttr(currentPerson)}" data-day="${d}">`;
     html += `<div class="day-num ${dowCls}">${d}</div>`;
@@ -1001,18 +1054,21 @@ function renderPerson() {
   html += '<div class="summary" style="margin-top:16px; border-radius:10px; border:1px solid var(--line);">';
   html += `<h2>${currentPerson} のサマリー</h2>`;
   html += `<div class="summary-grid">`;
-  html += `<div class="summary-card"><h3>出勤・休日</h3>`;
+  html += `<div class="summary-card"><h3>出勤・休日・出張</h3>`;
   html += `<div class="summary-row"><span>出勤日数</span><span class="v">${workCount} 日</span></div>`;
   html += `<div class="summary-row"><span>休日数</span><span class="v">${restCount} 日</span></div>`;
+  html += `<div class="summary-row"><span>🏨 出張日数</span><span class="v" style="color:#c8a648;">${stayCount} 日</span></div>`;
   html += `<div class="summary-row"><span>未入力</span><span class="v">${days - workCount - restCount} 日</span></div>`;
   html += `</div>`;
-  html += `<div class="summary-card"><h3>現場別工数</h3>`;
+  html += `<div class="summary-card"><h3>現場別工数（うち出張）</h3>`;
   const sortedSites = Object.entries(siteCount).sort((a,b) => b[1]-a[1]);
   if (sortedSites.length === 0) {
     html += '<div style="color:var(--ink-soft); font-size:12px;">データなし</div>';
   } else {
     sortedSites.forEach(([s,c]) => {
-      html += `<div class="summary-row"><span>${escapeHtml(s)}</span><span class="v">${c} 日</span></div>`;
+      const stayN = siteStayCount[s] || 0;
+      const stayLabel = stayN > 0 ? ` <span style="color:#c8a648;">🏨${stayN}</span>` : '';
+      html += `<div class="summary-row"><span>${escapeHtml(s)}</span><span class="v">${c} 日${stayLabel}</span></div>`;
     });
   }
   html += `</div></div></div>`;
@@ -1041,7 +1097,7 @@ function renderSiteMatrix() {
       const site = entry.site;
       if (!byDay[site]) byDay[site] = {};
       if (!byDay[site][d]) byDay[site][d] = [];
-      byDay[site][d].push({ name, vehicle: entry.vehicle });
+      byDay[site][d].push({ name, vehicle: entry.vehicle, stay: !!entry.stay });
     }
   });
 
@@ -1070,11 +1126,15 @@ function renderSiteMatrix() {
       let cls = 'cell ' + dowCls;
       if (site === REST && entries.length > 0) cls += ' is-rest';
       else if (entries.length > 0) cls += ' has-value';
-      // 姓のみ + 車両番号短縮
+      // 姓のみ + 車両番号短縮 + 宿泊マーク
       const lines = entries.map(e => {
         const surname = e.name.split(' ')[0];
         const vehShort = e.vehicle ? e.vehicle.replace('号車','号') : '';
-        return vehShort ? `${surname}<span style="font-size:9px; opacity:0.7;">/${vehShort}</span>` : surname;
+        const stayMark = e.stay ? '🏨' : '';
+        let line = surname;
+        if (vehShort) line += `<span style="font-size:9px; opacity:0.7;">/${vehShort}</span>`;
+        if (stayMark) line += `<span style="font-size:9px;">${stayMark}</span>`;
+        return line;
       });
       html += `<td class="${cls}">${lines.join('<br>')}</td>`;
     }
@@ -1098,34 +1158,42 @@ function bindCellTaps() {
 // ===== サマリー =====
 function renderSummary() {
   const days = daysInMonth(currentYear, currentMonth);
-  // 全体サマリー：現場別工数、人別出勤
+  // 全体サマリー：現場別工数、人別出勤、出張集計
   const siteCount = {};
+  const siteStayCount = {};
   const personCount = {};
   state.names.forEach(name => {
-    personCount[name] = { work: 0, rest: 0 };
+    personCount[name] = { work: 0, rest: 0, stay: 0 };
     for (let d = 1; d <= days; d++) {
-      const v = getSchedule(currentYear, currentMonth, name, d);
-      if (!v) continue;
+      const entry = getEntry(currentYear, currentMonth, name, d);
+      if (!entry || !entry.site) continue;
+      const v = entry.site;
       if (v === REST) personCount[name].rest++;
       else {
         personCount[name].work++;
         siteCount[v] = (siteCount[v] || 0) + 1;
+        if (entry.stay) {
+          personCount[name].stay++;
+          siteStayCount[v] = (siteStayCount[v] || 0) + 1;
+        }
       }
     }
   });
 
   let html = '<div class="summary"><h2>月次サマリー</h2><div class="summary-grid">';
-  html += '<div class="summary-card"><h3>個人別 出勤/休</h3>';
+  html += '<div class="summary-card"><h3>個人別 出勤/休/出張</h3>';
   state.names.forEach(name => {
     const p = personCount[name];
-    html += `<div class="summary-row"><span>${escapeHtml(name)}</span><span class="v">${p.work} / ${p.rest}</span></div>`;
+    html += `<div class="summary-row"><span>${escapeHtml(name)}</span><span class="v">${p.work} / ${p.rest} <span style="color:#c8a648;">/ 🏨${p.stay}</span></span></div>`;
   });
   html += '</div>';
-  html += '<div class="summary-card"><h3>現場別 延べ工数</h3>';
+  html += '<div class="summary-card"><h3>現場別 延べ工数（うち出張）</h3>';
   const sorted = Object.entries(siteCount).sort((a,b) => b[1]-a[1]);
   if (sorted.length === 0) html += '<div style="color:var(--ink-soft); font-size:12px;">データなし</div>';
   else sorted.forEach(([s,c]) => {
-    html += `<div class="summary-row"><span>${escapeHtml(s)}</span><span class="v">${c} 人日</span></div>`;
+    const stayN = siteStayCount[s] || 0;
+    const stayLabel = stayN > 0 ? ` <span style="color:#c8a648;">🏨${stayN}</span>` : '';
+    html += `<div class="summary-row"><span>${escapeHtml(s)}</span><span class="v">${c} 人日${stayLabel}</span></div>`;
   });
   html += '</div></div></div>';
   return html;
@@ -1267,7 +1335,7 @@ function editList(kind) {
 }
 
 // ===== 出力 =====
-// セルを出力用文字列に変換（「現場名」+ 改行 + 「車1」）
+// セルを出力用文字列に変換（「現場名」+ 改行 + 「車1 🏨」）
 function entryToCellString(entry) {
   if (!entry) return '';
   const main = entryMainLabel(entry);
@@ -1281,20 +1349,23 @@ function exportCSV() {
   const rows = [];
   const header = ['名前'];
   for (let d = 1; d <= days; d++) header.push(`${d}(${DOW_JP[dayOfWeek(currentYear, currentMonth, d)]})`);
-  header.push('出勤', '休');
+  header.push('出勤', '休', '出張');
   rows.push(header);
   state.names.forEach(name => {
     const row = [name];
-    let w = 0, r = 0;
+    let w = 0, r = 0, s = 0;
     for (let d = 1; d <= days; d++) {
       const entry = getEntry(currentYear, currentMonth, name, d);
       row.push(entryToCellString(entry));
       if (entry) {
         if (entry.site === REST) r++;
-        else if (entry.site) w++;
+        else if (entry.site) {
+          w++;
+          if (entry.stay) s++;
+        }
       }
     }
-    row.push(w, r);
+    row.push(w, r, s);
     rows.push(row);
   });
   const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -1370,24 +1441,28 @@ function buildSpreadsheetML(sheets) {
       xml += `<Cell ss:StyleID="${sid}"><Data ss:Type="String">${d}(${DOW_JP[dow]})</Data></Cell>`;
     }
     xml += `<Cell ss:StyleID="head"><Data ss:Type="String">出勤</Data></Cell>`;
-    xml += `<Cell ss:StyleID="head"><Data ss:Type="String">休</Data></Cell></Row>`;
+    xml += `<Cell ss:StyleID="head"><Data ss:Type="String">休</Data></Cell>`;
+    xml += `<Cell ss:StyleID="head"><Data ss:Type="String">出張</Data></Cell></Row>`;
     // データ
     state.names.forEach(name => {
       xml += `<Row><Cell ss:StyleID="cell"><Data ss:Type="String">${escapeXml(name)}</Data></Cell>`;
-      let w = 0, r = 0;
+      let w = 0, r = 0, s = 0;
       for (let d = 1; d <= days; d++) {
         const entry = getEntry(year, month, name, d);
         const cellStr = entryToCellString(entry);
-        // SpreadsheetMLで改行は &#10; で表現
         const xmlVal = escapeXml(cellStr).replace(/\n/g, '&#10;');
         xml += `<Cell ss:StyleID="cell"><Data ss:Type="String">${xmlVal}</Data></Cell>`;
         if (entry) {
           if (entry.site === REST) r++;
-          else if (entry.site) w++;
+          else if (entry.site) {
+            w++;
+            if (entry.stay) s++;
+          }
         }
       }
       xml += `<Cell ss:StyleID="cell"><Data ss:Type="Number">${w}</Data></Cell>`;
-      xml += `<Cell ss:StyleID="cell"><Data ss:Type="Number">${r}</Data></Cell></Row>`;
+      xml += `<Cell ss:StyleID="cell"><Data ss:Type="Number">${r}</Data></Cell>`;
+      xml += `<Cell ss:StyleID="cell"><Data ss:Type="Number">${s}</Data></Cell></Row>`;
     });
     xml += `</Table></Worksheet>`;
   });
