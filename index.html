@@ -413,7 +413,6 @@
 
   /* ===== 印刷・PDF出力モード ===== */
   @media print {
-    @page { size: A4 landscape; margin: 8mm; }
     body { background: #fff !important; }
     header, .input-bar, .action-row, .view-tabs, .menu-btn, .month-nav, .sync-indicator { display: none !important; }
     main { overflow: visible !important; height: auto !important; }
@@ -429,12 +428,9 @@
     table.matrix tbody td.cell.has-stay { box-shadow: inset 0 0 0 1.5px #c8a648 !important; }
     .summary { page-break-before: auto; padding: 16px !important; }
     .summary-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; page-break-inside: avoid; }
-    /* 印刷用タイトル */
     .print-title { display: block !important; }
-    /* 個人カレンダーは1ページに収める */
     .person-view .person-selector { display: none !important; }
     .calendar-grid { page-break-inside: avoid; }
-    /* 現場×日マトリクスも横長 */
     table.site-matrix { font-size: 7pt !important; }
   }
   .print-title { display: none; }
@@ -445,6 +441,23 @@
       padding: 4px 0 8px;
       text-align: center;
     }
+  }
+
+  /* A3モードのときの拡大スタイル（bodyに print-a3 が付いた時のみ） */
+  @media print {
+    body.print-a3 table.matrix { font-size: 11pt !important; }
+    body.print-a3 table.matrix tbody td.cell { height: 48px; min-width: 42px; font-size: 10pt; }
+    body.print-a3 table.matrix tbody td.cell .cell-main { font-size: 11pt; }
+    body.print-a3 table.matrix tbody td.cell .cell-sub { font-size: 9pt; }
+    body.print-a3 table.matrix thead th { height: 44px; font-size: 11pt; }
+    body.print-a3 table.site-matrix { font-size: 10pt !important; }
+    body.print-a3 .print-title { font-size: 18pt !important; }
+    body.print-a3 .calendar-grid .day-cell { font-size: 13pt; }
+    body.print-a3 .calendar-grid .day-num { font-size: 16pt !important; }
+    body.print-a3 .calendar-grid .site-name { font-size: 12pt !important; }
+    body.print-a3 .summary h2 { font-size: 16pt !important; }
+    body.print-a3 .summary-card h3 { font-size: 13pt !important; }
+    body.print-a3 .summary-row { font-size: 12pt !important; }
   }
 </style>
 </head>
@@ -1263,7 +1276,8 @@ document.getElementById('menu-btn').onclick = () => {
     <button class="menu-btn-large" id="m-names">👥 名前リストを編集</button>
     <button class="menu-btn-large" id="m-sites">📋 現場リストを編集</button>
     <button class="menu-btn-large" id="m-vehicles">🚐 車両リストを編集</button>
-    <button class="menu-btn-large" id="m-print">🖨 PDFで出力（印刷）</button>
+    <button class="menu-btn-large" id="m-print">🖨 PDF出力（A4横）</button>
+    <button class="menu-btn-large" id="m-print-a3">🖨 PDF出力（A3横）</button>
     <button class="menu-btn-large" id="m-export-csv">📤 CSV出力（今月）</button>
     <button class="menu-btn-large" id="m-export-excel">📊 Excel互換出力（今月）</button>
     <button class="menu-btn-large" id="m-export-year">📦 年間Excel出力</button>
@@ -1273,7 +1287,8 @@ document.getElementById('menu-btn').onclick = () => {
   document.getElementById('m-names').onclick = () => editList('names');
   document.getElementById('m-sites').onclick = () => editList('sites');
   document.getElementById('m-vehicles').onclick = () => editList('vehicles');
-  document.getElementById('m-print').onclick = doPrint;
+  document.getElementById('m-print').onclick = () => doPrint('a4');
+  document.getElementById('m-print-a3').onclick = () => doPrint('a3');
   document.getElementById('m-export-csv').onclick = exportCSV;
   document.getElementById('m-export-excel').onclick = exportMonthExcel;
   document.getElementById('m-export-year').onclick = exportYearExcel;
@@ -1373,8 +1388,24 @@ function editList(kind) {
 }
 
 // ===== 印刷（PDF出力）=====
-function doPrint() {
+function doPrint(paperSize) {
   closeModal();
+  paperSize = paperSize || 'a4';
+
+  // 動的に@pageルールを設定するstyle要素を挿入
+  let pageStyle = document.getElementById('dynamic-page-style');
+  if (pageStyle) pageStyle.remove();
+  pageStyle = document.createElement('style');
+  pageStyle.id = 'dynamic-page-style';
+  const pageSize = paperSize === 'a3' ? 'A3' : 'A4';
+  const margin = paperSize === 'a3' ? '10mm' : '8mm';
+  pageStyle.textContent = `@page { size: ${pageSize} landscape; margin: ${margin}; }`;
+  document.head.appendChild(pageStyle);
+
+  // A3クラスを付ける
+  document.body.classList.remove('print-a3');
+  if (paperSize === 'a3') document.body.classList.add('print-a3');
+
   // 印刷用タイトルを動的に挿入
   const main = document.getElementById('main');
   let titleEl = document.getElementById('print-title-el');
@@ -1383,13 +1414,16 @@ function doPrint() {
   const personLabel = currentView === 'person' ? ` - ${currentPerson}` : '';
   const titleHtml = `<div class="print-title" id="print-title-el">${currentYear}年${currentMonth}月 現場予定表（${viewLabel}${personLabel}）</div>`;
   main.insertAdjacentHTML('afterbegin', titleHtml);
+
   // 印刷ダイアログ呼び出し
   setTimeout(() => {
     window.print();
-    // 印刷後にタイトルを削除（少し遅らせて確実に）
     setTimeout(() => {
       const t = document.getElementById('print-title-el');
       if (t) t.remove();
+      document.body.classList.remove('print-a3');
+      const ps = document.getElementById('dynamic-page-style');
+      if (ps) ps.remove();
     }, 500);
   }, 100);
 }
