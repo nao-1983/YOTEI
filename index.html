@@ -410,6 +410,42 @@
     .view-tabs button { padding: 8px 10px; font-size: 12px; }
     .summary-grid { grid-template-columns: 1fr; }
   }
+
+  /* ===== 印刷・PDF出力モード ===== */
+  @media print {
+    @page { size: A4 landscape; margin: 8mm; }
+    body { background: #fff !important; }
+    header, .input-bar, .action-row, .view-tabs, .menu-btn, .month-nav, .sync-indicator { display: none !important; }
+    main { overflow: visible !important; height: auto !important; }
+    .matrix-wrap { overflow: visible !important; }
+    table.matrix { font-size: 8pt !important; width: 100%; page-break-inside: auto; }
+    table.matrix thead th { position: static !important; background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    table.matrix thead th.col-name, table.matrix tbody th.row-name { position: static !important; }
+    table.matrix tbody td.cell { height: 32px; min-width: 28px; font-size: 7pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    table.matrix tbody td.cell.has-value { background: #f4dccf !important; }
+    table.matrix tbody td.cell.is-rest { background: #ececec !important; }
+    table.matrix tbody td.cell.day-sun, table.matrix thead th.day-sun { background: #fdf2ee !important; }
+    table.matrix tbody td.cell.day-sat, table.matrix thead th.day-sat { background: #eef4fb !important; }
+    table.matrix tbody td.cell.has-stay { box-shadow: inset 0 0 0 1.5px #c8a648 !important; }
+    .summary { page-break-before: auto; padding: 16px !important; }
+    .summary-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; page-break-inside: avoid; }
+    /* 印刷用タイトル */
+    .print-title { display: block !important; }
+    /* 個人カレンダーは1ページに収める */
+    .person-view .person-selector { display: none !important; }
+    .calendar-grid { page-break-inside: avoid; }
+    /* 現場×日マトリクスも横長 */
+    table.site-matrix { font-size: 7pt !important; }
+  }
+  .print-title { display: none; }
+  @media print {
+    .print-title {
+      display: block;
+      font-size: 14pt; font-weight: 700;
+      padding: 4px 0 8px;
+      text-align: center;
+    }
+  }
 </style>
 </head>
 <body>
@@ -1227,6 +1263,7 @@ document.getElementById('menu-btn').onclick = () => {
     <button class="menu-btn-large" id="m-names">👥 名前リストを編集</button>
     <button class="menu-btn-large" id="m-sites">📋 現場リストを編集</button>
     <button class="menu-btn-large" id="m-vehicles">🚐 車両リストを編集</button>
+    <button class="menu-btn-large" id="m-print">🖨 PDFで出力（印刷）</button>
     <button class="menu-btn-large" id="m-export-csv">📤 CSV出力（今月）</button>
     <button class="menu-btn-large" id="m-export-excel">📊 Excel互換出力（今月）</button>
     <button class="menu-btn-large" id="m-export-year">📦 年間Excel出力</button>
@@ -1236,6 +1273,7 @@ document.getElementById('menu-btn').onclick = () => {
   document.getElementById('m-names').onclick = () => editList('names');
   document.getElementById('m-sites').onclick = () => editList('sites');
   document.getElementById('m-vehicles').onclick = () => editList('vehicles');
+  document.getElementById('m-print').onclick = doPrint;
   document.getElementById('m-export-csv').onclick = exportCSV;
   document.getElementById('m-export-excel').onclick = exportMonthExcel;
   document.getElementById('m-export-year').onclick = exportYearExcel;
@@ -1334,7 +1372,29 @@ function editList(kind) {
   };
 }
 
-// ===== 出力 =====
+// ===== 印刷（PDF出力）=====
+function doPrint() {
+  closeModal();
+  // 印刷用タイトルを動的に挿入
+  const main = document.getElementById('main');
+  let titleEl = document.getElementById('print-title-el');
+  if (titleEl) titleEl.remove();
+  const viewLabel = ({ matrix: '名前×日', person: '個人カレンダー', site: '現場×日' })[currentView] || '';
+  const personLabel = currentView === 'person' ? ` - ${currentPerson}` : '';
+  const titleHtml = `<div class="print-title" id="print-title-el">${currentYear}年${currentMonth}月 現場予定表（${viewLabel}${personLabel}）</div>`;
+  main.insertAdjacentHTML('afterbegin', titleHtml);
+  // 印刷ダイアログ呼び出し
+  setTimeout(() => {
+    window.print();
+    // 印刷後にタイトルを削除（少し遅らせて確実に）
+    setTimeout(() => {
+      const t = document.getElementById('print-title-el');
+      if (t) t.remove();
+    }, 500);
+  }, 100);
+}
+
+// ===== CSV/Excel出力 =====
 // セルを出力用文字列に変換（「現場名」+ 改行 + 「車1 🏨」）
 function entryToCellString(entry) {
   if (!entry) return '';
