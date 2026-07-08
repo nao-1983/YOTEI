@@ -709,6 +709,19 @@ document.querySelectorAll('.view-tabs button').forEach(btn => {
 function renderInputBar() {
   const bar = document.getElementById('input-bar');
   bar.innerHTML = '<span class="label">入力モード →</span>';
+  // マスタにない現場が入力モードなら、先頭に一時チップを表示
+  if (inputMode && inputMode !== REST && inputMode !== ERASER && !state.sites.includes(inputMode)) {
+    const tempChip = document.createElement('button');
+    tempChip.className = 'site-chip selected';
+    tempChip.style.borderStyle = 'dashed';
+    tempChip.style.borderColor = '#fff';
+    tempChip.innerHTML = `📋 ${escapeHtml(inputMode)} <span style="opacity:0.7; font-size:10px;">（一時）</span>`;
+    tempChip.onclick = () => { inputMode = null; renderInputBar(); updateActionRow(); };
+    bar.appendChild(tempChip);
+    const sep0 = document.createElement('span');
+    sep0.style.cssText = 'width:1px; height:24px; background:var(--line-strong); flex-shrink:0; margin:0 4px;';
+    bar.appendChild(sep0);
+  }
   state.sites.forEach(site => {
     if (FIXED_SITES.includes(site)) return;
     const chip = document.createElement('button');
@@ -756,7 +769,7 @@ function updateActionRow() {
       } else {
         editBtn.style.display = 'none';
       }
-      if (entry && entry.site && entry.site !== REST && state.sites.includes(entry.site)) {
+      if (entry && entry.site && entry.site !== REST) {
         copyBtn.style.display = '';
         copyBtn.textContent = `📋 「${entry.site}」を入力モードに`;
       } else {
@@ -782,7 +795,6 @@ function copySiteFromSelectedCell() {
   const [name, dayStr] = key.split('|');
   const entry = getEntry(currentYear, currentMonth, name, parseInt(dayStr));
   if (!entry || !entry.site || entry.site === REST) return;
-  if (!state.sites.includes(entry.site)) return;
   inputMode = entry.site;
   clearSelection();
   renderInputBar();
@@ -1559,7 +1571,7 @@ function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;'
 function escapeAttr(s) { return escapeHtml(s); }
 function escapeXml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c])); }
 
-console.log('現場予定表 v2026-07-08 セル現場コピー機能対応版');
+console.log('現場予定表 v2026-07-09 マスタ外現場コピー対応版');
 subscribeMonth(currentYear, currentMonth);
 render();
 </script>
