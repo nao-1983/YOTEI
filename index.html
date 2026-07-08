@@ -4,11 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>現場予定表</title>
-<!-- アイコン -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<!-- iOSホーム画面追加時の設定 -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="現場予定">
@@ -42,17 +40,13 @@
     overscroll-behavior: none;
   }
   body { min-height: 100vh; display: flex; flex-direction: column; }
-
-  /* ===== ヘッダー ===== */
   header {
     background: var(--ink); color: #fff;
     padding: 10px 16px;
     display: flex; align-items: center; gap: 12px;
     flex-wrap: wrap;
   }
-  header h1 {
-    margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.04em;
-  }
+  header h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; }
   .month-nav {
     display: flex; align-items: center; gap: 6px;
     background: rgba(255,255,255,0.08);
@@ -64,10 +58,7 @@
     border-radius: 6px; cursor: pointer;
   }
   .month-nav button:active { background: rgba(255,255,255,0.2); }
-  .month-label {
-    min-width: 110px; text-align: center;
-    font-size: 15px; font-weight: 700;
-  }
+  .month-label { min-width: 110px; text-align: center; font-size: 15px; font-weight: 700; }
   .view-tabs {
     display: flex; gap: 0; margin-left: auto;
     background: rgba(255,255,255,0.08); border-radius: 8px; padding: 3px;
@@ -91,8 +82,6 @@
   .sync-indicator.synced { background: rgba(40,180,90,0.35); }
   .sync-indicator.syncing { background: rgba(230,180,30,0.35); }
   .sync-indicator.error { background: rgba(220,60,60,0.45); }
-
-  /* ===== 入力モードバー ===== */
   .input-bar {
     background: var(--panel);
     border-bottom: 1px solid var(--line);
@@ -101,10 +90,7 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .input-bar .label {
-    font-size: 12px; color: var(--ink-soft); font-weight: 600;
-    white-space: nowrap;
-  }
+  .input-bar .label { font-size: 12px; color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
   .site-chip {
     flex-shrink: 0;
     padding: 8px 14px; border-radius: 999px;
@@ -122,7 +108,6 @@
   .site-chip.rest.selected { background: var(--rest); border-color: var(--rest); }
   .site-chip.gencho.selected { background: var(--gencho); border-color: var(--gencho); }
   .site-chip.eraser.selected { background: #444; border-color: #444; }
-
   .action-row {
     background: var(--accent-soft);
     border-bottom: 1px solid var(--line);
@@ -144,21 +129,14 @@
     background: transparent; color: var(--ink-soft);
     border: 1px solid var(--line-strong);
   }
-
-  /* ===== メイン領域 ===== */
   main { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; }
-
-  /* ===== マトリクス表示 ===== */
   .matrix-wrap {
     background: var(--panel);
     overflow: auto;
     height: 100%;
     -webkit-overflow-scrolling: touch;
   }
-  table.matrix {
-    border-collapse: collapse;
-    font-size: 12px;
-  }
+  table.matrix { border-collapse: collapse; font-size: 12px; }
   table.matrix th, table.matrix td {
     border: 1px solid var(--line);
     padding: 0; margin: 0;
@@ -168,8 +146,7 @@
   table.matrix thead th {
     position: sticky; top: 0; z-index: 3;
     background: #faf9f4;
-    height: 38px;
-    min-width: 38px;
+    height: 38px; min-width: 38px;
     font-size: 11px; font-weight: 600;
     color: var(--ink-soft);
   }
@@ -180,9 +157,7 @@
     min-width: 96px; background: #faf9f4;
     text-align: left; padding-left: 8px;
   }
-  table.matrix thead th.col-total {
-    background: #faf9f4; min-width: 44px;
-  }
+  table.matrix thead th.col-total { background: #faf9f4; min-width: 44px; }
   table.matrix tbody th.row-name {
     position: sticky; left: 0; z-index: 2;
     background: #faf9f4;
@@ -201,19 +176,13 @@
     word-break: break-all;
     padding: 2px 1px;
   }
-  table.matrix tbody td.cell .cell-main {
-    font-size: 10px; line-height: 1.1;
-    font-weight: 600;
-  }
+  table.matrix tbody td.cell .cell-main { font-size: 10px; line-height: 1.1; font-weight: 600; }
   table.matrix tbody td.cell .cell-sub {
     font-size: 9px; line-height: 1.1;
-    opacity: 0.75;
-    margin-top: 1px;
+    opacity: 0.75; margin-top: 1px;
     font-weight: 500;
   }
-  table.matrix tbody td.cell.has-stay {
-    box-shadow: inset 0 0 0 2px #c8a648;
-  }
+  table.matrix tbody td.cell.has-stay { box-shadow: inset 0 0 0 2px #c8a648; }
   table.matrix tbody td.cell.has-stay::before {
     content: '🏨';
     position: absolute;
@@ -222,7 +191,6 @@
     line-height: 1;
     pointer-events: none;
   }
-  /* 材料納品予定行：グレー基調で控えめに */
   table.matrix tbody tr.material-tr th.row-name {
     background: #e8e6df !important;
     color: #555;
@@ -234,9 +202,7 @@
     color: #444;
     font-style: italic;
   }
-  table.matrix tbody td.cell.is-material .cell-main {
-    font-weight: 500;
-  }
+  table.matrix tbody td.cell.is-material .cell-main { font-weight: 500; }
   @media print {
     table.matrix tbody tr.material-tr th.row-name {
       background: #e8e6df !important;
@@ -273,8 +239,6 @@
     font-weight: 700; font-size: 13px;
     min-width: 44px;
   }
-
-  /* ===== 個人カレンダー表示 ===== */
   .person-view { padding: 12px; }
   .person-selector {
     display: flex; gap: 8px; overflow-x: auto;
@@ -335,21 +299,15 @@
     margin-top: auto; line-height: 1.15;
     word-break: break-all;
   }
-
-  /* ===== 現場×日マトリクス ===== */
   table.site-matrix tbody th.row-name { min-width: 130px; }
   table.site-matrix tbody td.cell {
     font-size: 10px; line-height: 1.1; white-space: nowrap;
   }
-
-  /* ===== サマリーパネル ===== */
   .summary {
     background: var(--panel); padding: 14px;
     border-top: 1px solid var(--line);
   }
-  .summary h2 {
-    margin: 0 0 10px; font-size: 14px; font-weight: 700;
-  }
+  .summary h2 { margin: 0 0 10px; font-size: 14px; font-weight: 700; }
   .summary-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
   }
@@ -368,8 +326,6 @@
   }
   .summary-row:last-child { border-bottom: 0; }
   .summary-row .v { font-weight: 700; }
-
-  /* ===== モーダル ===== */
   .modal-bg {
     position: fixed; inset: 0; background: rgba(0,0,0,0.5);
     display: none; align-items: center; justify-content: center;
@@ -395,9 +351,7 @@
     padding: 6px 10px; border: 0; background: #e0e0e0;
     border-radius: 6px; cursor: pointer;
   }
-  .modal .add-row {
-    display: flex; gap: 8px; margin-top: 10px;
-  }
+  .modal .add-row { display: flex; gap: 8px; margin-top: 10px; }
   .modal .add-row input {
     flex: 1; padding: 10px; border: 1px solid var(--line);
     border-radius: 6px; font-size: 14px;
@@ -418,8 +372,6 @@
   .modal-actions .primary {
     background: var(--ink); color: #fff; border-color: var(--ink);
   }
-
-  /* ===== メニュー ===== */
   .menu-modal { max-width: 360px; }
   .menu-btn-large {
     display: block; width: 100%;
@@ -428,15 +380,11 @@
     background: #fff; text-align: left;
     font-size: 14px; font-weight: 600; cursor: pointer;
   }
-
-  /* レスポンシブ */
   @media (max-width: 640px) {
     header h1 { display: none; }
     .view-tabs button { padding: 8px 10px; font-size: 12px; }
     .summary-grid { grid-template-columns: 1fr; }
   }
-
-  /* ===== 印刷・PDF出力モード ===== */
   @media print {
     body { background: #fff !important; }
     header, .input-bar, .action-row, .view-tabs, .menu-btn, .month-nav, .sync-indicator { display: none !important; }
@@ -467,8 +415,6 @@
       text-align: center;
     }
   }
-
-  /* A3モードのときの拡大スタイル（bodyに print-a3 が付いた時のみ） */
   @media print {
     body.print-a3 table.matrix { font-size: 11pt !important; }
     body.print-a3 table.matrix tbody td.cell { height: 48px; min-width: 42px; font-size: 10pt; }
@@ -506,20 +452,19 @@
 
 <div class="input-bar" id="input-bar">
   <span class="label">入力モード →</span>
-  <!-- 動的に現場チップが入る -->
 </div>
 
 <div class="action-row" id="action-row">
   <span><span class="count" id="sel-count">0</span> 件選択中</span>
   <span id="sel-target-label" style="color: var(--ink-soft); font-size: 12px;"></span>
   <button class="clear-sel" id="clear-sel">選択解除</button>
+  <button id="copy-btn" style="display:none; background:#1f7a4d;">📋 この現場を入力モードに</button>
   <button id="edit-btn" style="display:none; background:#444;">✎ 詳細編集</button>
   <button id="apply-btn">一括入力</button>
 </div>
 
 <main id="main"></main>
 
-<!-- マスタ編集モーダル -->
 <div class="modal-bg" id="modal-bg">
   <div class="modal" id="modal-content"></div>
 </div>
@@ -527,7 +472,6 @@
 <script type="module">
 'use strict';
 
-// ===== Firebase SDK =====
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, doc, setDoc, getDoc, onSnapshot, enableIndexedDbPersistence
@@ -544,15 +488,12 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
-// オフライン永続化（複数タブでエラーになるが無視）
 enableIndexedDbPersistence(db).catch(()=>{});
 
-// コレクション名（在庫アプリと衝突しないよう専用名で）
 const COL = 'genba_schedule';
 const MASTERS_DOC = doc(db, COL, 'masters');
 const scheduleDoc = (year, month) => doc(db, COL, 'schedules_' + year + '_' + String(month).padStart(2,'0'));
 
-// ===== 同期インジケーター =====
 const syncIndicator = document.getElementById('sync-indicator');
 function setSyncStatus(status) {
   syncIndicator.className = 'sync-indicator ' + status;
@@ -561,21 +502,18 @@ function setSyncStatus(status) {
 }
 setSyncStatus('syncing');
 
-// ===== 初期データ =====
 const DEFAULT_NAMES = ['池田 匡輝','貴島 直行','福田 哉和','貴島 大輔','藤村 佑磨','佐野 裕太','松井 佑太','岩本 峯大','池田 流安','深井 登志史','金丸 勝人'];
 const DEFAULT_SITES = ['事務所','コスモス新富店','コスモス高田店','コスモスあさぎり店','コスモスグリーンランド店','コスモス瓦屋町店','ロッテ九州','旭化成','製錬所','一種講習','一種技能試験','二種講習','二種技能試験','コスモス現調','ロッテ九州現調','天草現調','車両系'];
 const DEFAULT_VEHICLES = ['1号車','2号車','3号車','4号車','5号車'];
 const REST = '休';
 const ERASER = '__erase__';
-const MATERIAL_ROW = '材料納品予定'; // 名前リストの一番上に固定で表示する特殊行
+const MATERIAL_ROW = '材料納品予定';
 const FIXED_SITES = [REST];
 
-// ===== 状態 =====
 const state = {
   names: [...DEFAULT_NAMES],
   sites: [...DEFAULT_SITES],
   vehicles: [...DEFAULT_VEHICLES],
-  // schedule[year][month][name][day] = {site, vehicle}
   schedule: {}
 };
 let currentYear = new Date().getFullYear();
@@ -585,24 +523,19 @@ let inputMode = null;
 let selectedCells = new Set();
 let currentPerson = state.names[0] || null;
 let mastersLoaded = false;
-let currentScheduleUnsub = null; // 現在監視中の月のunsubscribe関数
-let lastSnapshotMonthKey = ''; // 現在監視中の月キー（重複監視防止）
-let writeInFlight = 0; // 書き込み中カウント
+let currentScheduleUnsub = null;
+let lastSnapshotMonthKey = '';
+let writeInFlight = 0;
 
-// ===== Firestore 読み書き =====
-
-// マスタを監視（リアルタイム）
 onSnapshot(MASTERS_DOC, (snap) => {
   if (snap.exists()) {
     const d = snap.data();
     if (Array.isArray(d.names)) state.names = d.names;
     if (Array.isArray(d.sites)) state.sites = d.sites;
     if (Array.isArray(d.vehicles)) state.vehicles = d.vehicles;
-    // 固定項目を保証
     FIXED_SITES.forEach(fs => { if (!state.sites.includes(fs)) state.sites.push(fs); });
     if (currentPerson && !state.names.includes(currentPerson)) currentPerson = state.names[0];
   } else {
-    // 初回：デフォルト値で作成
     saveMasters();
   }
   mastersLoaded = true;
@@ -629,7 +562,6 @@ async function saveMasters() {
   }
 }
 
-// 月切り替え時：その月のスケジュールを購読
 function subscribeMonth(year, month) {
   const key = year + '_' + month;
   if (lastSnapshotMonthKey === key && currentScheduleUnsub) return;
@@ -640,7 +572,6 @@ function subscribeMonth(year, month) {
     const entries = (snap.exists() && snap.data().entries) ? snap.data().entries : {};
     if (!state.schedule[year]) state.schedule[year] = {};
     state.schedule[year][month] = {};
-    // entries: { "name|day": {site, vehicle} } をネスト構造へ展開
     Object.entries(entries).forEach(([k, v]) => {
       const sep = k.lastIndexOf('|');
       const name = k.substring(0, sep);
@@ -653,7 +584,6 @@ function subscribeMonth(year, month) {
   }, (err) => { console.error('schedule onSnapshot', err); setSyncStatus('error'); });
 }
 
-// 当月のスケジュールをFirestoreに保存（差分のみ）
 async function saveScheduleEntry(year, month, name, day, value) {
   writeInFlight++;
   setSyncStatus('syncing');
@@ -674,8 +604,7 @@ async function saveScheduleEntry(year, month, name, day, value) {
   }
 }
 
-// 複数セルを一括保存（一括入力用、1回の書き込みにまとめる）
-async function saveScheduleBatch(year, month, updates /* [{name, day, value}] */) {
+async function saveScheduleBatch(year, month, updates) {
   writeInFlight++;
   setSyncStatus('syncing');
   try {
@@ -697,7 +626,6 @@ async function saveScheduleBatch(year, month, updates /* [{name, day, value}] */
   }
 }
 
-// 月単位の全削除
 async function clearMonth(year, month) {
   writeInFlight++;
   setSyncStatus('syncing');
@@ -712,16 +640,9 @@ async function clearMonth(year, month) {
   }
 }
 
-// 表示用：材料納品予定を先頭に追加した名前リスト
-function displayNames() {
-  return [MATERIAL_ROW, ...state.names];
-}
-// 集計対象の名前リスト（材料納品予定は除く）
-function countingNames() {
-  return state.names;
-}
+function displayNames() { return [MATERIAL_ROW, ...state.names]; }
+function countingNames() { return state.names; }
 
-// セルデータ正規化：文字列→オブジェクト形式の統一化
 function normalizeEntry(raw) {
   if (!raw) return null;
   if (typeof raw === 'string') return { site: raw, vehicle: '', stay: false };
@@ -732,12 +653,10 @@ function getEntry(year, month, name, day) {
   return normalizeEntry(state.schedule?.[year]?.[month]?.[name]?.[day]);
 }
 
-// 表示用：セルに出すラベル（メイン行）
 function entryMainLabel(entry) {
   if (!entry) return '';
   return entry.site;
 }
-// 表示用：セルに出すサブラベル（2行目）
 function entrySubLabel(entry) {
   if (!entry) return '';
   const parts = [];
@@ -758,12 +677,10 @@ function setSchedule(year, month, name, day, value) {
   else delete state.schedule[year][month][name][day];
 }
 
-// ===== ユーティリティ =====
 function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
-function dayOfWeek(y, m, d) { return new Date(y, m-1, d).getDay(); } // 0=日
+function dayOfWeek(y, m, d) { return new Date(y, m-1, d).getDay(); }
 const DOW_JP = ['日','月','火','水','木','金','土'];
 
-// ===== 月ナビ =====
 document.getElementById('prev-month').onclick = () => {
   currentMonth--;
   if (currentMonth < 1) { currentMonth = 12; currentYear--; }
@@ -779,7 +696,6 @@ document.getElementById('next-month').onclick = () => {
   render();
 };
 
-// ===== ビュー切替 =====
 document.querySelectorAll('.view-tabs button').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('.view-tabs button').forEach(b => b.classList.remove('active'));
@@ -790,11 +706,9 @@ document.querySelectorAll('.view-tabs button').forEach(btn => {
   };
 });
 
-// ===== 入力モードバー =====
 function renderInputBar() {
   const bar = document.getElementById('input-bar');
   bar.innerHTML = '<span class="label">入力モード →</span>';
-  // 通常現場（固定項目は除く）
   state.sites.forEach(site => {
     if (FIXED_SITES.includes(site)) return;
     const chip = document.createElement('button');
@@ -804,18 +718,15 @@ function renderInputBar() {
     chip.onclick = () => { inputMode = (inputMode === site) ? null : site; renderInputBar(); updateActionRow(); };
     bar.appendChild(chip);
   });
-  // 区切り
   const sep = document.createElement('span');
   sep.style.cssText = 'width:1px; height:24px; background:var(--line-strong); flex-shrink:0; margin:0 4px;';
   bar.appendChild(sep);
-  // 休
   const restChip = document.createElement('button');
   restChip.className = 'site-chip rest';
   restChip.textContent = '休';
   if (inputMode === REST) restChip.classList.add('selected');
   restChip.onclick = () => { inputMode = (inputMode === REST) ? null : REST; renderInputBar(); updateActionRow(); };
   bar.appendChild(restChip);
-  // 消しゴム
   const eraseChip = document.createElement('button');
   eraseChip.className = 'site-chip eraser';
   eraseChip.textContent = '消去';
@@ -834,20 +745,26 @@ function updateActionRow() {
     document.getElementById('sel-target-label').textContent = '→ ' + target;
     document.getElementById('apply-btn').disabled = !inputMode;
     document.getElementById('apply-btn').style.opacity = inputMode ? 1 : 0.4;
-    // 1セル選択かつそのセルに既存データがあれば「詳細編集」ボタンを表示
     const editBtn = document.getElementById('edit-btn');
+    const copyBtn = document.getElementById('copy-btn');
     if (count === 1) {
       const key = Array.from(selectedCells)[0];
       const [name, dayStr] = key.split('|');
       const entry = getEntry(currentYear, currentMonth, name, parseInt(dayStr));
-      // 材料納品予定行は詳細編集対象外（車両も宿泊もないので）
       if (name !== MATERIAL_ROW && entry && entry.site && entry.site !== REST) {
         editBtn.style.display = '';
       } else {
         editBtn.style.display = 'none';
       }
+      if (entry && entry.site && entry.site !== REST && state.sites.includes(entry.site)) {
+        copyBtn.style.display = '';
+        copyBtn.textContent = `📋 「${entry.site}」を入力モードに`;
+      } else {
+        copyBtn.style.display = 'none';
+      }
     } else {
       editBtn.style.display = 'none';
+      copyBtn.style.display = 'none';
     }
   } else {
     row.classList.remove('visible');
@@ -857,6 +774,25 @@ function updateActionRow() {
 document.getElementById('clear-sel').onclick = clearSelection;
 document.getElementById('apply-btn').onclick = applyToSelection;
 document.getElementById('edit-btn').onclick = openEditDialog;
+document.getElementById('copy-btn').onclick = copySiteFromSelectedCell;
+
+function copySiteFromSelectedCell() {
+  if (selectedCells.size !== 1) return;
+  const key = Array.from(selectedCells)[0];
+  const [name, dayStr] = key.split('|');
+  const entry = getEntry(currentYear, currentMonth, name, parseInt(dayStr));
+  if (!entry || !entry.site || entry.site === REST) return;
+  if (!state.sites.includes(entry.site)) return;
+  inputMode = entry.site;
+  clearSelection();
+  renderInputBar();
+  updateActionRow();
+  setTimeout(() => {
+    const bar = document.getElementById('input-bar');
+    const selectedChip = bar.querySelector('.site-chip.selected');
+    if (selectedChip) selectedChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, 50);
+}
 
 function openEditDialog() {
   if (selectedCells.size !== 1) return;
@@ -878,7 +814,6 @@ function openEditDialog() {
   });
   html += `</div></div>`;
 
-  // 宿泊チェック
   html += `<div style="margin-bottom:14px;">
     <label style="display:flex; align-items:center; gap:10px; padding:12px; background:#fafaf6; border:1.5px solid var(--line); border-radius:8px; cursor:pointer; font-size:14px; font-weight:600;">
       <input type="checkbox" id="edit-stay" ${entry.stay ? 'checked' : ''} style="width:22px; height:22px; cursor:pointer;">
@@ -908,7 +843,7 @@ function openEditDialog() {
       vehicle: newVehicle,
       stay: document.getElementById('edit-stay').checked
     };
-    setSchedule(currentYear, currentMonth, name, day, newEntry); // 楽観的UI更新
+    setSchedule(currentYear, currentMonth, name, day, newEntry);
     saveScheduleEntry(currentYear, currentMonth, name, day, newEntry);
     selectedCells.clear();
     closeModal();
@@ -918,7 +853,6 @@ function openEditDialog() {
 }
 
 function clearSelection() {
-  // 既存の選択セルからクラスを外す
   document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
   selectedCells.clear();
   updateActionRow();
@@ -927,14 +861,13 @@ function clearSelection() {
 function applyToSelection() {
   if (!inputMode || selectedCells.size === 0) return;
 
-  // 休・消去はダイアログ不要で即適用
   if (inputMode === REST || inputMode === ERASER) {
     const updates = [];
     selectedCells.forEach(key => {
       const [name, dayStr] = key.split('|');
       const day = parseInt(dayStr);
       const value = inputMode === ERASER ? '' : { site: REST, vehicle: '' };
-      setSchedule(currentYear, currentMonth, name, day, value); // 楽観的UI
+      setSchedule(currentYear, currentMonth, name, day, value);
       updates.push({ name, day, value });
     });
     saveScheduleBatch(currentYear, currentMonth, updates);
@@ -944,7 +877,6 @@ function applyToSelection() {
     return;
   }
 
-  // 選択セルが全て材料納品予定行なら、車両・宿泊ダイアログを省略してすぐ保存
   const allMaterial = Array.from(selectedCells).every(key => key.startsWith(MATERIAL_ROW + '|'));
   if (allMaterial) {
     const updates = [];
@@ -962,14 +894,12 @@ function applyToSelection() {
     return;
   }
 
-  // 現場：車両選択ダイアログを開く
   openApplyDialog();
 }
 
 function openApplyDialog() {
   let html = `<h2>${inputMode} を ${selectedCells.size} 件に入力</h2>`;
 
-  // 車両選択
   html += `<div style="margin-bottom:14px;">
     <div style="font-size:13px; font-weight:700; margin-bottom:6px;">車両（任意）</div>
     <div style="display:flex; flex-wrap:wrap; gap:6px;">`;
@@ -979,7 +909,6 @@ function openApplyDialog() {
   });
   html += `</div></div>`;
 
-  // 宿泊チェック
   html += `<div style="margin-bottom:14px;">
     <label style="display:flex; align-items:center; gap:10px; padding:12px; background:#fafaf6; border:1.5px solid var(--line); border-radius:8px; cursor:pointer; font-size:14px; font-weight:600;">
       <input type="checkbox" id="opt-stay" style="width:22px; height:22px; cursor:pointer;">
@@ -1031,25 +960,21 @@ function toggleCell(name, day) {
   const key = `${name}|${day}`;
   if (selectedCells.has(key)) selectedCells.delete(key);
   else selectedCells.add(key);
-  // 全体再描画せず、該当セルのクラスだけ更新（スクロール位置を保持）
   document.querySelectorAll(`[data-name="${cssEscape(name)}"][data-day="${day}"]`).forEach(el => {
     el.classList.toggle('selected', selectedCells.has(key));
   });
   updateActionRow();
 }
 
-// CSSセレクタ用のエスケープ（属性値内のクォートや空白を扱う）
 function cssEscape(s) {
   if (window.CSS && window.CSS.escape) return window.CSS.escape(s);
   return String(s).replace(/(["\\\\])/g, '\\\\$1');
 }
 
-// ===== 月ラベル =====
 function renderMonthLabel() {
   document.getElementById('month-label').textContent = `${currentYear}年${currentMonth}月`;
 }
 
-// ===== マトリクス表示（名前×日） =====
 function renderMatrix() {
   const main = document.getElementById('main');
   const days = daysInMonth(currentYear, currentMonth);
@@ -1086,14 +1011,13 @@ function renderMatrix() {
       if (isSel) cls += ' selected';
       let content = '';
       if (entry) {
-        const main = entryMainLabel(entry);
+        const mainLbl = entryMainLabel(entry);
         const sub = entrySubLabel(entry);
-        content = `<div class="cell-main">${escapeHtml(main)}</div>`;
+        content = `<div class="cell-main">${escapeHtml(mainLbl)}</div>`;
         if (sub && !isMaterial) content += `<div class="cell-sub">${escapeHtml(sub)}</div>`;
       }
       html += `<td class="${cls}" data-name="${escapeAttr(name)}" data-day="${d}">${content}</td>`;
     }
-    // 材料納品予定行は集計列を空にする
     if (isMaterial) {
       html += `<td class="total" style="background:#ececec; color:#888;">—</td><td class="total" style="background:#ececec; color:#888;">—</td></tr>`;
     } else {
@@ -1106,7 +1030,6 @@ function renderMatrix() {
   bindCellTaps();
 }
 
-// ===== 個人カレンダー =====
 function renderPerson() {
   const main = document.getElementById('main');
   const days = daysInMonth(currentYear, currentMonth);
@@ -1118,7 +1041,6 @@ function renderPerson() {
   });
   html += '</div>';
 
-  // カレンダーグリッド
   html += '<div class="calendar-grid">';
   ['日','月','火','水','木','金','土'].forEach((d,i) => {
     const cls = i === 0 ? 'dow sun' : (i === 6 ? 'dow sat' : 'dow');
@@ -1153,9 +1075,9 @@ function renderPerson() {
     html += `<div class="${cls}" data-name="${escapeAttr(currentPerson)}" data-day="${d}">`;
     html += `<div class="day-num ${dowCls}">${d}</div>`;
     if (entry) {
-      const main = entryMainLabel(entry);
+      const mainLbl = entryMainLabel(entry);
       const sub = entrySubLabel(entry);
-      html += `<div class="site-name">${escapeHtml(main)}`;
+      html += `<div class="site-name">${escapeHtml(mainLbl)}`;
       if (sub) html += `<br><span style="font-size:9px; opacity:0.75;">${escapeHtml(sub)}</span>`;
       html += `</div>`;
     }
@@ -1163,7 +1085,6 @@ function renderPerson() {
   }
   html += '</div>';
 
-  // 個人サマリー
   html += '<div class="summary" style="margin-top:16px; border-radius:10px; border:1px solid var(--line);">';
   html += `<h2>${currentPerson} のサマリー</h2>`;
   html += `<div class="summary-grid">`;
@@ -1195,12 +1116,10 @@ function renderPerson() {
   bindCellTaps();
 }
 
-// ===== 現場×日マトリクス =====
 function renderSiteMatrix() {
   const main = document.getElementById('main');
   const days = daysInMonth(currentYear, currentMonth);
 
-  // 現場ごとに、日ごとの担当者リストを構築
   const byDay = {};
   state.names.forEach(name => {
     for (let d = 1; d <= days; d++) {
@@ -1212,7 +1131,6 @@ function renderSiteMatrix() {
       byDay[site][d].push({ name, vehicle: entry.vehicle, stay: !!entry.stay, material: false });
     }
   });
-  // 材料納品予定も含める
   for (let d = 1; d <= days; d++) {
     const entry = getEntry(currentYear, currentMonth, MATERIAL_ROW, d);
     if (!entry || !entry.site) continue;
@@ -1231,7 +1149,6 @@ function renderSiteMatrix() {
   }
   html += '<th class="col-total">計</th></tr></thead><tbody>';
 
-  // 表示する現場一覧 = 通常現場 + 休（固定）
   const displaySites = [];
   state.sites.forEach(s => { if (!FIXED_SITES.includes(s) && !displaySites.includes(s)) displaySites.push(s); });
   displaySites.push(REST);
@@ -1243,13 +1160,11 @@ function renderSiteMatrix() {
       const dow = dayOfWeek(currentYear, currentMonth, d);
       const dowCls = dow === 0 ? 'day-sun' : (dow === 6 ? 'day-sat' : '');
       const entries = byDay[site]?.[d] || [];
-      // 集計は人のみ（材料納品は除く）
       const peopleCount = entries.filter(e => !e.material).length;
       total += peopleCount;
       let cls = 'cell ' + dowCls;
       if (site === REST && entries.length > 0) cls += ' is-rest';
       else if (entries.length > 0) cls += ' has-value';
-      // 姓のみ + 車両番号短縮 + 宿泊マーク（材料納品は📦マーク）
       const lines = entries.map(e => {
         if (e.material) {
           return `<span style="font-size:9px; color:#666;">📦納品</span>`;
@@ -1270,7 +1185,6 @@ function renderSiteMatrix() {
   main.innerHTML = html;
 }
 
-// ===== セルタップバインド =====
 function bindCellTaps() {
   document.querySelectorAll('[data-name][data-day]').forEach(el => {
     el.addEventListener('click', () => {
@@ -1281,10 +1195,8 @@ function bindCellTaps() {
   });
 }
 
-// ===== サマリー =====
 function renderSummary() {
   const days = daysInMonth(currentYear, currentMonth);
-  // 全体サマリー：現場別工数、人別出勤、出張集計
   const siteCount = {};
   const siteStayCount = {};
   const personCount = {};
@@ -1313,7 +1225,7 @@ function renderSummary() {
     html += `<div class="summary-row"><span>${escapeHtml(name)}</span><span class="v">${p.work} / ${p.rest} <span style="color:#c8a648;">/ 🏨${p.stay}</span></span></div>`;
   });
   html += '</div>';
-  html += '<div class="summary-card"><h3>現場別 延べ工数（うち出張）</h3>';
+  html += '<div class="summary-card"><h3>現場別 延べ工数(うち出張)</h3>';
   const sorted = Object.entries(siteCount).sort((a,b) => b[1]-a[1]);
   if (sorted.length === 0) html += '<div style="color:var(--ink-soft); font-size:12px;">データなし</div>';
   else sorted.forEach(([s,c]) => {
@@ -1325,7 +1237,6 @@ function renderSummary() {
   return html;
 }
 
-// ===== メイン描画 =====
 function render() {
   renderMonthLabel();
   renderInputBar();
@@ -1339,14 +1250,12 @@ function render() {
   }
 }
 
-// ===== モーダル制御 =====
 const modalBg = document.getElementById('modal-bg');
 const modalContent = document.getElementById('modal-content');
 modalBg.addEventListener('click', (e) => { if (e.target === modalBg) closeModal(); });
 function openModal(html) { modalContent.innerHTML = html; modalBg.classList.add('visible'); }
 function closeModal() { modalBg.classList.remove('visible'); }
 
-// ===== メニュー =====
 document.getElementById('menu-btn').onclick = () => {
   openModal(`
     <h2>メニュー</h2>
@@ -1379,7 +1288,6 @@ document.getElementById('menu-btn').onclick = () => {
 };
 window.closeModal = closeModal;
 
-// ===== マスタ編集 =====
 function editList(kind) {
   const arr = state[kind];
   const title = kind === 'names' ? '名前リスト' : (kind === 'sites' ? '現場リスト' : '車両リスト');
@@ -1403,7 +1311,6 @@ function editList(kind) {
       </div>`;
     }
   });
-  // 固定項目がリストに未登録なら、見せるだけ追加（保存時に補完）
   if (kind === 'sites') {
     FIXED_SITES.forEach(fs => {
       if (!arr.includes(fs)) {
@@ -1450,9 +1357,7 @@ function editList(kind) {
       const i = parseInt(inp.dataset.idx);
       arr[i] = inp.value.trim();
     });
-    // 空を除去
     state[kind] = arr.filter(x => x);
-    // 現場の場合、固定項目を保証
     if (kind === 'sites') {
       FIXED_SITES.forEach(fs => {
         if (!state.sites.includes(fs)) state.sites.push(fs);
@@ -1464,12 +1369,10 @@ function editList(kind) {
   };
 }
 
-// ===== 印刷（PDF出力）=====
 function doPrint(paperSize) {
   closeModal();
   paperSize = paperSize || 'a4';
 
-  // 動的に@pageルールを設定するstyle要素を挿入
   let pageStyle = document.getElementById('dynamic-page-style');
   if (pageStyle) pageStyle.remove();
   pageStyle = document.createElement('style');
@@ -1479,20 +1382,17 @@ function doPrint(paperSize) {
   pageStyle.textContent = `@page { size: ${pageSize} landscape; margin: ${margin}; }`;
   document.head.appendChild(pageStyle);
 
-  // A3クラスを付ける
   document.body.classList.remove('print-a3');
   if (paperSize === 'a3') document.body.classList.add('print-a3');
 
-  // 印刷用タイトルを動的に挿入
   const main = document.getElementById('main');
   let titleEl = document.getElementById('print-title-el');
   if (titleEl) titleEl.remove();
   const viewLabel = ({ matrix: '名前×日', person: '個人カレンダー', site: '現場×日' })[currentView] || '';
   const personLabel = currentView === 'person' ? ` - ${currentPerson}` : '';
-  const titleHtml = `<div class="print-title" id="print-title-el">${currentYear}年${currentMonth}月 現場予定表（${viewLabel}${personLabel}）</div>`;
+  const titleHtml = `<div class="print-title" id="print-title-el">${currentYear}年${currentMonth}月 現場予定表(${viewLabel}${personLabel})</div>`;
   main.insertAdjacentHTML('afterbegin', titleHtml);
 
-  // 印刷ダイアログ呼び出し
   setTimeout(() => {
     window.print();
     setTimeout(() => {
@@ -1505,8 +1405,6 @@ function doPrint(paperSize) {
   }, 100);
 }
 
-// ===== CSV/Excel出力 =====
-// セルを出力用文字列に変換（「現場名」+ 改行 + 「車1 🏨」）
 function entryToCellString(entry) {
   if (!entry) return '';
   const main = entryMainLabel(entry);
@@ -1538,7 +1436,7 @@ function exportCSV() {
       }
     }
     if (isMaterial) {
-      row.push('', '', ''); // 材料納品行は集計列を空欄
+      row.push('', '', '');
     } else {
       row.push(w, r, s);
     }
@@ -1551,7 +1449,6 @@ function exportCSV() {
 }
 
 function exportMonthExcel() {
-  // SheetJSがなくても動くよう、Excelで開けるxml形式（SpreadsheetML2003）を生成
   const xml = buildSpreadsheetML([{ year: currentYear, month: currentMonth }]);
   const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
   downloadBlob(blob, `${currentYear}年${currentMonth}月_出勤表.xls`);
@@ -1559,7 +1456,6 @@ function exportMonthExcel() {
 }
 
 async function exportYearExcel() {
-  // 表示中以外の月もFirestoreから取得してstateに展開
   setSyncStatus('syncing');
   try {
     for (let m = 1; m <= 12; m++) {
@@ -1609,7 +1505,6 @@ function buildSpreadsheetML(sheets) {
     const days = daysInMonth(year, month);
     xml += `<Worksheet ss:Name="${month}月"><Table>`;
     xml += `<Row><Cell ss:StyleID="title"><Data ss:Type="String">${year}年${month}月 出勤表</Data></Cell></Row>`;
-    // ヘッダ
     xml += `<Row><Cell ss:StyleID="head"><Data ss:Type="String">名前</Data></Cell>`;
     for (let d = 1; d <= days; d++) {
       const dow = dayOfWeek(year, month, d);
@@ -1619,7 +1514,6 @@ function buildSpreadsheetML(sheets) {
     xml += `<Cell ss:StyleID="head"><Data ss:Type="String">出勤</Data></Cell>`;
     xml += `<Cell ss:StyleID="head"><Data ss:Type="String">休</Data></Cell>`;
     xml += `<Cell ss:StyleID="head"><Data ss:Type="String">出張</Data></Cell></Row>`;
-    // データ
     displayNames().forEach(name => {
       const isMaterial = (name === MATERIAL_ROW);
       xml += `<Row><Cell ss:StyleID="cell"><Data ss:Type="String">${escapeXml(name)}</Data></Cell>`;
@@ -1661,13 +1555,11 @@ function downloadBlob(blob, name) {
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 }
 
-// ===== エスケープ =====
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escapeAttr(s) { return escapeHtml(s); }
 function escapeXml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c])); }
 
-// ===== 起動 =====
-console.log('現場予定表 v2026-05-22 材料納品予定行対応版');
+console.log('現場予定表 v2026-07-08 セル現場コピー機能対応版');
 subscribeMonth(currentYear, currentMonth);
 render();
 </script>
