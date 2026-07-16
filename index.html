@@ -184,12 +184,17 @@
   }
   table.matrix tbody td.cell.has-stay { box-shadow: inset 0 0 0 2px #c8a648; }
   table.matrix tbody td.cell.has-stay::before {
-    content: '🏨';
+    content: '宿泊';
     position: absolute;
-    top: 1px; right: 1px;
-    font-size: 9px;
-    line-height: 1;
+    top: 0; right: 1px;
+    font-size: 8px;
+    line-height: 1.1;
+    color: #c8a648;
+    font-weight: 700;
     pointer-events: none;
+    background: rgba(255,255,255,0.7);
+    padding: 0 2px;
+    border-radius: 3px;
   }
   table.matrix tbody tr.material-tr th.row-name {
     background: #e8e6df !important;
@@ -283,10 +288,15 @@
     box-shadow: inset 0 0 0 2px #c8a648;
   }
   .calendar-grid .day-cell.has-stay::after {
-    content: '🏨';
+    content: '宿泊';
     position: absolute;
     top: 2px; right: 4px;
-    font-size: 11px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #c8a648;
+    background: rgba(255,255,255,0.7);
+    padding: 0 3px;
+    border-radius: 3px;
   }
   .calendar-grid .day-cell.selected {
     outline: 3px solid var(--selected-border); outline-offset: -3px;
@@ -661,7 +671,7 @@ function entrySubLabel(entry) {
   if (!entry) return '';
   const parts = [];
   if (entry.vehicle) parts.push(entry.vehicle.replace('号車','号'));
-  if (entry.stay) parts.push('🏨泊');
+  if (entry.stay) parts.push('宿泊');
   return parts.join(' ');
 }
 
@@ -1183,10 +1193,10 @@ function renderSiteMatrix() {
         }
         const surname = e.name.split(' ')[0];
         const vehShort = e.vehicle ? e.vehicle.replace('号車','号') : '';
-        const stayMark = e.stay ? '🏨' : '';
+        const stayMark = e.stay ? '宿泊' : '';
         let line = surname;
         if (vehShort) line += `<span style="font-size:9px; opacity:0.7;">/${vehShort}</span>`;
-        if (stayMark) line += `<span style="font-size:9px;">${stayMark}</span>`;
+        if (stayMark) line += `<span style="font-size:9px; color:#c8a648; font-weight:700;"> ${stayMark}</span>`;
         return line;
       });
       html += `<td class="${cls}">${lines.join('<br>')}</td>`;
@@ -1571,7 +1581,7 @@ function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;'
 function escapeAttr(s) { return escapeHtml(s); }
 function escapeXml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c])); }
 
-console.log('現場予定表 v2026-07-09 マスタ外現場コピー対応版');
+console.log('現場予定表 v2026-07-09-2 宿泊表示を文字化');
 subscribeMonth(currentYear, currentMonth);
 render();
 </script>
